@@ -1,6 +1,6 @@
 {
-  "name": "douhub-helper-util",
-  "version": "1.0.14",
+  "name": "douhub-helper-service",
+  "version": "1.0.1",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -10,14 +10,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dou-hub/douhub-helper-util.git"
+    "url": "git+https://github.com/dou-hub/douhub-helper-service.git"
   },
   "dependencies": {
-    "is-url": "^1.2.4",
-    "js-base64": "^3.7.2",
-    "libphonenumber-js": "^1.9.42",
-    "lodash": "^4.17.21",
-    "uuid": "^8.3.2"
+    "aws-sdk": "^2.1033.0",
+    "douhub-helper-util": "^1.0.14",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.177",
