@@ -7,16 +7,17 @@
 import { S3 } from 'aws-sdk';
 import { isNil } from 'lodash';
 import { isNonEmptyString, getContentType } from 'douhub-helper-util';
+import { AWS_REGION } from './types';
 
 const _s3: Record<string, any> = {};
 
-export const getS3 = (region?: string) => {
+export const getS3 = (region?: AWS_REGION) => {
     region = region?region:'us-east-1';
     if (!_s3[region]) _s3[region] = new S3({ region });
     return _s3[region];
 }
 
-export const s3Exist = async (bucketName: string, fileName: string, region?: 'us-east-1') => {
+export const s3Exist = async (bucketName: string, fileName: string, region?: AWS_REGION) => {
     return new Promise(function (resolve, reject) {
         getS3(region).headObject({
             Bucket: bucketName,
@@ -32,7 +33,7 @@ export const s3Exist = async (bucketName: string, fileName: string, region?: 'us
     });
 };
 
-export const s3Put = async (bucketName: string, fileName: string, content: string, region?: 'us-east-1') => {
+export const s3Put = async (bucketName: string, fileName: string, content: string, region?: AWS_REGION) => {
     await getS3(region).putObject({
         Bucket: bucketName,
         Key: fileName,
@@ -40,11 +41,11 @@ export const s3Put = async (bucketName: string, fileName: string, content: strin
     }).promise();
 };
 
-export const s3PutObject = async (bucketName: string, fileName: string, content: Record<string, any>, region?: 'us-east-1') => {
+export const s3PutObject = async (bucketName: string, fileName: string, content: Record<string, any>, region?: AWS_REGION) => {
     await await s3Put(bucketName, fileName, isNil(content) ? '' : JSON.stringify(content), region);
 };
 
-export const s3Get = async (bucketName: string, fileName: string, region?: 'us-east-1', versionId?: string)
+export const s3Get = async (bucketName: string, fileName: string, region?: AWS_REGION, versionId?: string)
     : Promise<{
         versionId: string,
         isLatest: boolean,
@@ -78,7 +79,7 @@ export const s3Get = async (bucketName: string, fileName: string, region?: 'us-e
 
 };
 
-export const s3GetObject = async (bucketName: string, fileName: string, versionId?: string, region?: 'us-east-1'): Promise<Record<string, any> | null> => {
+export const s3GetObject = async (bucketName: string, fileName: string, versionId?: string, region?: AWS_REGION): Promise<Record<string, any> | null> => {
     const result = await getS3(region)(bucketName, fileName, versionId);
     return {
         versionId: result.versionId,
@@ -88,7 +89,7 @@ export const s3GetObject = async (bucketName: string, fileName: string, versionI
     };
 };
 
-export const s3Delete = async (bucketName: string, fileName: string, region?: 'us-east-1') => {
+export const s3Delete = async (bucketName: string, fileName: string, region?: AWS_REGION) => {
     return new Promise(function (resolve, reject) {
         getS3(region).deleteObject({
             Bucket: bucketName,
@@ -109,7 +110,7 @@ export const s3Delete = async (bucketName: string, fileName: string, region?: 'u
 export const s3SignedUrl = async (bucketName: string, fileName: string,
     acl: 'public-read-write',
     expires: 3600,
-    region?: 'us-east-1'
+    region?: AWS_REGION
 ) => {
 
     return await getS3(region).getSignedUrlPromise('putObject',

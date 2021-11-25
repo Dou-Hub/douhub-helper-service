@@ -32,7 +32,7 @@ const Graph = require('gremlin');
 // import qs from 'qs';
 
 const solutionId = solution.id;
-export const PROFILE_TABLE_NAME = `${process.env.RESOURCE_PREFIX}-profile`;
+export const DYNAMO_DB_TABLE_NAME_PROFILE = `${process.env.RESOURCE_PREFIX}-profile`;
 export const CACHE_TABLE_NAME = `${process.env.RESOURCE_PREFIX}-cache`;
 
 const RATE_LIMIT_SETTING = {
@@ -164,25 +164,6 @@ _.getPropValueOfEvent = (event, name, defaultValue) => {
     return !_.isNil(v) ? v : (_.isNil(defaultValue) ? null : defaultValue);
 };
 
-_.getContext = async (event, settings) => {
-
-    if (!_.isObject(settings)) settings = {};
-    let context = await _.parseApiToken(event);
-    if (_.trackLibs) console.log({ parseApiToken: context });
-
-    if (!_.isObject(context)) context = await _.parseAccessToken(event);
-    if (_.trackLibs) console.log({ parseAccessToken: context });
-
-    if (!_.isObject(context)) context = {};
-    context.event = event;
-
-    if (_.isNonEmptyString(context.userId) && !settings.skipUserProfile) {
-        context.user = (await _.dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id: `user.${context.userId}` } }).promise()).Item;
-        if (_.isObject(context.user)) context.user.id = context.userId;
-    }
-
-    return context;
-};
 
 _.getRecordToken = (event) => {
     let token = _.getPropValueOfEvent(event, "recordToken");
@@ -201,22 +182,6 @@ _.getSourceIp = (event) => {
 
 _.getAccessToken = (event) => {
     return _.getPropValueOfEvent(event, 'accessToken');
-};
-
-_.checkRateLimit = async (sourceIp, apiName, points) => {
-
-    const callerId = `${sourceIp}-${apiName}`;
-
-    try {
-        await _.rateLimiter.consume(callerId, _.isNumber(points) ? points : 2); // consume points
-        return true;
-    }
-    catch (ex) {
-        // Not enough points to consume
-        console.error(ex);
-        if (_.trackLibs) console.log('Bad Caller', callerId);
-        return false;
-    }
 };
 
 _.getSecretValue = async (name) => {
@@ -398,12 +363,12 @@ _.upsertToken = async (userId, type, data, allowMultiple) => {
 
     const id = `tokens.${userId}`;
     let token = null;
-    let profile = (await _.dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
+    let profile = (await _.dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
     if (!_.isObject(profile)) {
         //if there is no the user tokens profile, we will create one
         token = { token: await _.encryptToken(`${userId}|${type}|${_.newGuid()}`), createdOn: _.utcISOString(), type, data };
         await _.dynamoDb.put({
-            TableName: PROFILE_TABLE_NAME, Item: {
+            TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: {
                 createdOn: _.utcISOString(), id, tokens: [token]
             }
         }).promise();
@@ -413,7 +378,7 @@ _.upsertToken = async (userId, type, data, allowMultiple) => {
             token = { token: await _.encryptToken(`${userId}|${type}|${_.newGuid()}`), createdOn: _.utcISOString(), type, data };
             profile.tokens.push(token);
             await _.dynamoDb.put({
-                TableName: PROFILE_TABLE_NAME, Item: profile
+                TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: profile
             }).promise();
         }
         else {
@@ -428,7 +393,7 @@ _.upsertToken = async (userId, type, data, allowMultiple) => {
                 token = { token: await _.encryptToken(`${userId}|${type}|${_.newGuid()}`), createdOn: _.utcISOString(), type, data };
                 profile.tokens.push(token);
                 await _.dynamoDb.put({
-                    TableName: PROFILE_TABLE_NAME, Item: profile
+                    TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: profile
                 }).promise();
             }
         }
@@ -449,7 +414,7 @@ _.userToken = async (userId, organizationId, roles) => {
 _.getToken = async (userId, type) => {
 
     const id = `tokens.${userId}`;
-    const profile = (await _.dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
+    const profile = (await _.dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
     if (!_.isObject(profile)) return null;
     const token = _.find(profile.tokens, (t) => t.type == type);
     return token || null;
@@ -462,7 +427,7 @@ _.checkToken = async (token) => {
             await _.getSecretValue('SECRET_CODE'),
             await _.getSecretValue('SECRET_IV'))).split('|')[0];
         const id = `tokens.${userId}`;
-        const profile = (await _.dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
+        const profile = (await _.dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
         if (!_.isObject(profile)) return null;
         const result = _.find(profile.tokens, (t) => t.token == token);
         return _.isObject(result) && _.isObject(result.data) ? result.data : null;
@@ -650,61 +615,6 @@ _.getDomain = (event, skipQueryValue) => {
     }
 
     return domain;
-};
-
-_.checkCaller = async (event, settings) => {
-
-    if (!settings) settings = {};
-    if (_.trackLibs) console.log({ event });
-
-    if (_.callFromAWSEvents(event)) {
-        return settings.stopAWSEvent ? { error: _.onSuccess(event, {}) } : {}; //error here will just make sure it stop execute from here
-    }
-
-    const result = {};
-
-    const sourceIp = _.getSourceIp(event);
-
-    if (!settings.ignoreRateLimit && !(await _.checkRateLimit(sourceIp, settings.apiName, settings.apiPoints))) {
-        return _.onError(HTTPERROR_429, {
-            name: 'ERROR_API_TOO_MANY_REQUESTS',
-            detail: {
-                sourceIp,
-                apiName: settings.apiName,
-                apiPoints: settings.apiPoints
-            }
-        });
-    }
-
-    if (!settings.ignoreAuth) {
-        result.context = await _.getContext(event, settings);
-        if (!_.isNonEmptyString(result.context.userId)) {
-            return _.onError(HTTPERROR_403);
-        }
-    }
-
-    if (settings.verifyReCaptcha) {
-
-        const recaptchaToken = _.getPropValueOfEvent(event, 'recaptchaToken');
-        if (!_.isNonEmptyString(recaptchaToken)) {
-            return _.onError(HTTPERROR_400, {
-                name: 'ERROR_API_MISSING_PARAMETERS',
-                detail: { paramName: 'recaptchaToken' }
-            });
-        }
-
-        const recaptchaSiteKey = solution.keys.recaptchaSiteKey;
-
-        if (!await verifyReCaptchaToken(recaptchaSiteKey, recaptchaToken)) {
-            return _.onError(HTTPERROR_400, {
-                name: 'ERROR_API_FAILED_RECAPTCHA',
-                detail: { recaptchaToken }
-            });
-        }
-    }
-
-
-    return result;
 };
 
 

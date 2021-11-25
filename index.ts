@@ -17,3 +17,7 @@ export {
     s3Delete,
     s3SignedUrl
 } from './libs/s3';
+
+export {
+    AWS_REGION
+} from './libs/types';
