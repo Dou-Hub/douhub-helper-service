@@ -58,51 +58,6 @@ _.elasticSearchCache = null;
 _.s3Uploader = null;
 
 
-_.slug = (text) => {
-    return !_.isNonEmptyString(text) ? null : slugify(text.replace(/_/g, '-'), {
-        lower: 'true',
-        remove: /[=:?#@!$&'()*+,;"<>%{}|\\^`]/g
-    })
-        .replace(/\./g, '-')
-        .replace(/\//g, '-')
-        .toLowerCase();
-};
-
-
-//Encrypt a string with key and iv
-_.encrypt = (s, key, iv) => {
-
-    if (!_.isNonEmptyString(key)) throw 'Encrypt key is not provided.';
-    if (!_.isNonEmptyString(iv)) throw 'Encrypt iv is not provided.';
-    try {
-        let result = CryptoJS.AES.encrypt(s, CryptoJS.MD5(key), { iv: CryptoJS.MD5(iv), mode: CryptoJS.mode.CBC });
-
-        result = result.ciphertext.toString(CryptoJS.enc.Base64);
-        return Base64.encode(result);
-    }
-    catch (error) {
-        console.error(error);
-        return '';
-    }
-};
-
-//Decrypt a string with key and iv
-_.decrypt = (s, key, iv) => {
-
-    if (!_.isNonEmptyString(key)) throw 'Decrypt key is not provided.';
-    if (!_.isNonEmptyString(iv)) throw 'Decrypt iv is not provided.';
-
-    try {
-        s = CryptoJS.enc.Base64.parse(s).toString(CryptoJS.enc.Utf8);
-        const result = CryptoJS.AES.decrypt(s, CryptoJS.MD5(key), { iv: CryptoJS.MD5(iv), mode: CryptoJS.mode.CBC });
-        return result.toString(CryptoJS.enc.Utf8);
-    }
-    catch (error) {
-        console.error(error);
-        return '';
-    }
-};
-
 
 _.callFromAWSEvents = (event) => {
     return event.source == "aws.events";
@@ -823,44 +778,6 @@ _.dualCosmosDBs = (sourceConnection, targetConnection) => {
     }
 };
 
-const getCosmosDb = async () => {
-
-    if (_.cosmosDb) return _.cosmosDb;
-
-    const coreDBConnectionInfo = (await _.getSecretValue('COSMOS_DB')).split("|");
-    _.cosmosDb = {};
-
-    _.cosmosDb.settings = {
-        type: "cosmosDb",
-        uri: coreDBConnectionInfo[0],
-        key: coreDBConnectionInfo[1],
-        collectionId: coreDBConnectionInfo[2],
-        databaseId: coreDBConnectionInfo[3],
-    };
-
-    try {
-        _.cosmosDb.client = new CosmosClient({
-            endpoint: _.cosmosDb.settings.uri,
-            key: _.cosmosDb.settings.key
-        });
-    }
-    catch (error) {
-        console.error({ error, message: 'Failed to new CosmosClient', settings: _.cosmosDb.settings });
-        _.cosmosDb = null;
-    }
-
-    return _.cosmosDb;
-};
-
-_.cosmosDbClient = async () => {
-    if (_.cosmosDb) return _.cosmosDb.client;
-    return (await getCosmosDb()).client;
-};
-
-_.cosmosDbSettings = async () => {
-    if (_.cosmosDb) return _.cosmosDb.settings;
-    return (await getCosmosDb()).settings;
-};
 
 _.handleActionSQS = async (event) => {
 
@@ -1067,87 +984,6 @@ _.sendAction = async (snsTopic, data, settings) => {
     return item;
 };
 
-//START: COSMOSDB HELPER
-_.cosmosDBDelete = async (data) => {
-
-    const coreDBSettings = await _.cosmosDbSettings();
-    const container = ((await _.cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.item(data.id, _.isNonEmptyString(data.partitionKey) ? data.partitionKey : data.organizationId).delete();
-
-};
-
-_.cosmosDBQuery = async (query, parameters, settings) => {
-
-    if (!_.isObject(settings)) settings = {};
-
-    const { includeAzureInfo } = settings;
-
-    const coreDBSettings = await _.cosmosDbSettings();
-    const container = ((await _.cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-
-    if (_.trackLibs) console.log({ coreDBSettings, query: JSON.stringify(query), parameters: JSON.stringify(parameters) });
-    const response = await container.items.query({ query, parameters }, { enableCrossPartitionQuery: true }).fetchAll();
-    return !includeAzureInfo ? response.resources : response;
-};
-
-_.cosmosDBUpsert = async (data) => {
-    const coreDBSettings = await _.cosmosDbSettings();
-    const container = ((await _.cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.items.upsert(data);
-};
-
-
-_.cosmosDBUpdateIfMatch = async (data) => {
-    const coreDBSettings = await _.cosmosDbSettings();
-    const container = ((await _.cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.item(data.id).replace(data, { accessCondition: { type: "IfMatch", condition: data["_etag"] } });
-};
-
-_.cosmosDBUpdate = async (data) => {
-    const coreDBSettings = await _.cosmosDbSettings();
-    const container = ((await _.cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.item(data.id).replace(data);
-};
-
-_.cosmosDBRetrieve = async (id, settings) => {
-
-    if (!_.isNonEmptyString(id)) return null;
-    if (!_.isObject(settings)) settings = {};
-
-    let { includeAzureInfo, attributes } = settings;
-
-    attributes = !_.isNonEmptyString(attributes) ? '*' :
-        `,${attributes}`.split(',').join(',c.').replace(/ /g, '').substring(1);
-
-    const result = await _.cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id=@id`, [
-        {
-            name: '@id',
-            value: id
-        }
-    ], { includeAzureInfo: true });
-    const data = result.resources;
-    return !includeAzureInfo ? (_.isArray(data) && data.length == 1 ? data[0] : null) : result;
-};
-//END: COSMOSDB HELPER
-
-//START: DYNAMODB HELPER
-
-_.dynamoDbGet = async (tableName, keyName, keyValue) => {
-    const key = {};
-    key[keyName] = keyValue;
-    const params = { TableName: tableName, Key: key };
-    const result = (await _.dynamoDb.get(params).promise()).Item;
-    return result;
-};
-
-_.dynamoDbSet = async (tableName, data) => {
-    await _.dynamoDb.put({
-        TableName: tableName,
-        Item: data
-    }).promise();
-};
-
-//END: DYNAMODB HELPER
 
 
 export default _;

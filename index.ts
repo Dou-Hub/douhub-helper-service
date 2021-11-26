@@ -21,3 +21,26 @@ export {
 export {
     AWS_REGION
 } from './libs/types';
+
+export {
+    dynamoDBCreate,
+    dynamoDBRetrieve,
+    dynamoDBDelete
+} from './libs/dynamo-db';
+
+export {
+    slug
+} from './libs/util';
+
+
+export {
+    cosmosDbClient,
+    cosmosDbSettings,
+    cosmosDBDelete,
+    cosmosDBQuery,
+    cosmosDBUpsert,
+    cosmosDBUpdateIfMatch,
+    cosmosDBUpdate,
+    cosmosDBRetrieve
+} from './libs/cosmos-db';
+

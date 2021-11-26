@@ -1,56 +1,49 @@
-
-//  COPYRIGHT:       PrimeObjects Software Inc. (C) 2021 All Right Reserved
-//  COMPANY URL:     https://www.primeobjects.com/
-//  CONTACT:         developer@primeobjects.com
+//  Copyright PrimeObjects Software Inc. and other contributors <https://www.primeobjects.com/>
 // 
-//  This source is subject to the PrimeObjects License Agreements. 
-// 
-//  Our EULAs define the terms of use and license for each PrimeObjects product. 
-//  Whenever you install a PrimeObjects product or research PrimeObjects source code file, you will be prompted to review and accept the terms of our EULA. 
-//  If you decline the terms of the EULA, the installation should be aborted and you should remove any and all copies of our products and source code from your computer. 
-//  If you accept the terms of our EULA, you must abide by all its terms as long as our technologies are being employed within your organization and within your applications.
-// 
-//  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
-//  OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT
-//  LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-//  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  ALL OTHER RIGHTS RESERVED
+//  This source code is licensed under the MIT license.
+//  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import _ from './base';
+import { cloneDeep, isArray, isObject } from 'lodash';
+import { isNonEmptyString, removeNoValueProperty } from 'douhub-helper-util';
+import { AWS_REGION } from './types';
+import { DynamoDB } from 'aws-sdk';
 
-export const deleteRecord = async (id, tableName, keyName) => {
+const _dynamoDb: Record<string, any> = {};
 
-    if (!_.isNonEmptyString(id)) throw new Error('ERROR_API_MISSING_PARAMETERS');
-    if (!_.isNonEmptyString(keyName)) keyName = 'id';
+export const getDynamoDB = (region?: AWS_REGION) => {
+    region = region ? region : 'us-east-1';
+    if (!_dynamoDb[region]) _dynamoDb[region] = new DynamoDB.DocumentClient({ region });
+    return _dynamoDb[region];
+}
 
-    const params = { TableName: tableName, Key: {} };
+export const dynamoDBDelete = async (id: string, tableName: string, keyName: string, region?: AWS_REGION) => {
+
+    if (!isNonEmptyString(id)) throw new Error('ERROR_API_MISSING_PARAMETERS');
+    if (!isNonEmptyString(keyName)) keyName = 'id';
+
+    const params: Record<string, any> = { TableName: tableName, Key: {} };
     params.Key[keyName] = id;
 
-    if (_.trackLibs) console.log("Attempting a conditional delete...");
-    await _.dynamoDb.delete(params).promise();
+    await (getDynamoDB(region)).delete(params).promise();
 };
 
-export const retrieveRecord = async  (key, tableName, attributes, keyName) => {
+export const dynamoDBRetrieve = async (key: string, tableName: string, region?: AWS_REGION, attributes?: Array<string>, keyName?: string): Promise<Record<string,any>> => {
 
-    if (!_.isNonEmptyString(key)) throw new Error('ERROR_API_MISSING_PARAMETERS');
-    if (!_.isNonEmptyString(keyName)) keyName = 'id';
+    if (!isNonEmptyString(key)) throw new Error('ERROR_API_MISSING_PARAMETERS');
+    
+    const params: Record<string, any> = { TableName: tableName, Key: {} };
+    params.Key[keyName?keyName:'id'] = key;
 
-    const params = { TableName: tableName, Key: {} };
-    params.Key[keyName] = key;
+    if (isArray(attributes)) params.AttributesToGet = attributes; //e.g. ["Artist", "Genre"]
 
-    if (_.isArray(attributes)) params.AttributesToGet = attributes; //e.g. ["Artist", "Genre"]
-
-    const record = (await _.dynamoDb.get(params).promise()).Item;
+    const record = (await (getDynamoDB(region)).get(params).promise()).Item;
 
     return record || null;
 };
 
+export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: AWS_REGION) => {
 
-export const createRecord = async  (data, tableName) => 
-{
-
-    if (!_.isObject(data)) throw new Error('ERROR_API_MISSING_PARAMETERS');
+    if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
 
     delete data['_etag'];
     delete data['_ts'];
@@ -58,28 +51,22 @@ export const createRecord = async  (data, tableName) =>
     delete data['_self'];
 
     const params = { TableName: tableName, Item: data };
-    await _.dynamoDb.put(params).promise();
+    await (getDynamoDB(region)).put(params).promise();
 };
 
 //If the record does not exist, this will be a create/insert operation
 //If the record exists, it will be a partial update
-export const upsertRecord = async  (data, tableName, fullUpdate, keyName) => {
+export const dynamoDBUpdate = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: AWS_REGION, keyName?: string):Promise<Record<string,any>> => {
 
-    if (!_.isObject(data)) throw new Error('ERROR_API_MISSING_PARAMETERS');
-    if (!_.isNonEmptyString(keyName)) keyName = 'id';
-    if (!_.isNonEmptyString(data[keyName])) throw new Error('ERROR_API_MISSING_PARAMETERS');
+    if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
+    const newKeyName: string = keyName?keyName: 'id';
+    if (!isNonEmptyString(data[newKeyName])) throw new Error('ERROR_API_MISSING_PARAMETERS');
 
-    // delete data['_etag'];
-    // delete data['_ts'];
     delete data['_charge'];
-    // delete data['_self'];
-    // delete data['_rid'];
-    // delete data['_attachments'];
     delete data['_key'];
 
     //Get the current version of data in the database, we will have to retrieve
-
-    const oriData = await retrieveRecord(data[keyName], tableName, null, keyName);
+    const oriData = await dynamoDBRetrieve(data[newKeyName], tableName, region, undefined, newKeyName);
 
     //if oriData is undefined, it means the record does not exist
     //we will create a new record
@@ -88,7 +75,7 @@ export const upsertRecord = async  (data, tableName, fullUpdate, keyName) => {
         data = processDataForCreate(data);
 
         //create a new record
-        await _.dynamoDb.put({
+        await (getDynamoDB(region)).put({
             TableName: tableName,
             Item: data
         }).promise();
@@ -112,7 +99,7 @@ export const upsertRecord = async  (data, tableName, fullUpdate, keyName) => {
         return oriData;
     }
     else {
-        const data = {
+        const data: Record<string, any> = {
             TableName: tableName,
             Key: {},
             ReturnValues: "NONE",
@@ -121,18 +108,16 @@ export const upsertRecord = async  (data, tableName, fullUpdate, keyName) => {
             ExpressionAttributeNames: updateParams.expressionAttributeNames
         };
 
-        data.Key[keyName] = oriData[keyName];
-        await _.dynamoDb.update(data).promise();
+        data.Key[newKeyName] = oriData[newKeyName];
+        await (getDynamoDB(region)).update(data).promise();
 
         return updateParams.data;
     }
 };
 
 //process data used for create/put
-const processDataForCreate = (data) => {
-    data = removeNoValueProperty(data, true);
-    if (_.trackLibs) console.log(data);
-    return data;
+const processDataForCreate = (data: Record<string, any>) => {
+    return removeNoValueProperty(data, true);
 };
 
 //because dynamodb only accept UpdateExpression and ExpressionAttributeValues
@@ -142,13 +127,13 @@ const processDataForCreate = (data) => {
 //if the property value in the new data is null or undefined, it will be removed, it means removed property has to be explicitly defined with null or undefiend value
 //if the property has value in old date but the property does not exist in new data, the property in the old data will be used, this will allow support partial update
 //if the value is changes or new property in the new data, it will be updated or added by using SET
-const createUpdateExpression = (oldData, newData, fullUpdate) => {
+const createUpdateExpression = (oldData: Record<string,any>, newData: Record<string,any>, fullUpdate: boolean) => {
     let expressionRemove = '';
     let expressionUpdate = '';
-    let expressionAttributeValues = {};
-    let expressionAttributeNames = {};
+    let expressionAttributeValues: Record<string,any> = {};
+    let expressionAttributeNames: Record<string,any> = {};
 
-    const data = {};
+    const data: Record<string,any> = {};
 
     //handle remove
     let p = null;
@@ -172,7 +157,7 @@ const createUpdateExpression = (oldData, newData, fullUpdate) => {
             expressionUpdate = expressionUpdate.length == 0 ? `SET #${p}=:${p}` : `${expressionUpdate},#${p}=:${p}`;
             expressionAttributeNames[`#${p}`] = p;
 
-            newDataValue = _.isObject(newDataValue) ? removeNoValueProperty(newDataValue, true) : newDataValue;
+            newDataValue = isObject(newDataValue) ? removeNoValueProperty(newDataValue, true) : newDataValue;
             expressionAttributeValues[`:${p}`] = newDataValue;
 
             //give new value to old data, so it can be skipped in the next step
@@ -190,12 +175,12 @@ const createUpdateExpression = (oldData, newData, fullUpdate) => {
         //check whether there's new data
         if (newDataValue !== undefined && newDataValue !== null) {
             //if new value is object or array, always override old data
-            if (_.isArray(newDataValue) || _.isObject(newDataValue)) {
+            if (isArray(newDataValue) || isObject(newDataValue)) {
                 //in case it has been handled in the previous step
                 if (!expressionAttributeValues[`:${p}`]) {
                     expressionUpdate = expressionUpdate.length == 0 ? `SET #${p}=:${p}` : `${expressionUpdate},#${p}=:${p}`;
 
-                    newDataValue = _.isObject(newDataValue) ? removeNoValueProperty(newDataValue, true) : newDataValue;
+                    newDataValue = isObject(newDataValue) ? removeNoValueProperty(newDataValue, true) : newDataValue;
                     expressionAttributeValues[`:${p}`] = newDataValue;
                     expressionAttributeNames[`#${p}`] = p;
 
@@ -237,5 +222,3 @@ const createUpdateExpression = (oldData, newData, fullUpdate) => {
         data
     };
 };
-
-export default {createRecord, upsertRecord, deleteRecord};

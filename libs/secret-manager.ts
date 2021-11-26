@@ -4,13 +4,14 @@
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { SecretsManager } from 'aws-sdk';
+import { SECRET_ID} from './constants';
 
 let _secret: any = null; //global variable to keep as cache
 const _secretsManager: SecretsManager = new SecretsManager({ region: process.env.REGION });
 
-export const getSecret = async (secretId: string): Promise<Record<string,any>> => {
+export const getSecret = async (): Promise<Record<string,any>> => {
     // Create a Secrets Manager client
-    if (!_secret) _secret = await _secretsManager.getSecretValue({ SecretId: secretId }).promise();
+    if (!_secret) _secret = await _secretsManager.getSecretValue({ SecretId: SECRET_ID }).promise();
 
     if ('SecretString' in _secret) {
         return JSON.parse(_secret.SecretString);
@@ -21,8 +22,8 @@ export const getSecret = async (secretId: string): Promise<Record<string,any>> =
 };
 
 
-export const getSecretValue = async (secretId: string, name:string): Promise<string> => {
-    const secret = await getSecret(secretId);
+export const getSecretValue = async (name:string): Promise<string> => {
+    const secret = await getSecret();
     return secret?.name;
 };
 
