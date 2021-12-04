@@ -20,20 +20,19 @@ import { solution } from "../../shared/metadata/solution";
 import _ from "../../shared/util/base";
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import AWS from 'aws-sdk';
-import { GUID_EMPTY, HTTPERROR_429, HTTPERROR_403, HTTPERROR_400 } from "../../shared/util/constants";
 import CryptoJS from "crypto-js";
 import { Base64 } from 'js-base64';
 import { Client as SearchClient } from "@elastic/elasticsearch";
 import { CosmosClient } from '@azure/cosmos';
 import slugify from 'slugify';
 import { verifyReCaptchaToken } from './auth';
+import {DYNAMO_DB_TABLE_NAME_CACHE} from '../libs/constants'
+
 
 const Graph = require('gremlin');
 // import qs from 'qs';
 
 const solutionId = solution.id;
-export const DYNAMO_DB_TABLE_NAME_PROFILE = `${process.env.RESOURCE_PREFIX}-profile`;
-export const CACHE_TABLE_NAME = `${process.env.RESOURCE_PREFIX}-cache`;
 
 const RATE_LIMIT_SETTING = {
     points: _.isNonEmptyString(process.env.RATE_LIMIT_POINTS_PER_SECOND) ? parseInt(process.env.RATE_LIMIT_POINTS_PER_SECOND) : 6, // 6 points
@@ -417,7 +416,7 @@ _.setDynamoDbCache = async (key, content, expireMinutes) => {
         }
 
         await _.dynamoDb.put({
-            TableName: CACHE_TABLE_NAME,
+            TableName: DYNAMO_DB_TABLE_NAME_CACHE,
             Item: cache
         }).promise();
     }
@@ -432,7 +431,7 @@ _.getS3Cache = async (key) => {
 
     try {
         const v = (await _.s3.getObject({
-            Bucket: CACHE_TABLE_NAME,
+            Bucket: DYNAMO_DB_TABLE_NAME_CACHE,
             Key: `${_.slug(key)}.txt`
         }).promise()).Body.toString();
 

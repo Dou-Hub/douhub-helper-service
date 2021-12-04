@@ -12,8 +12,6 @@ let _secretsManager: any = null;
 
 export const getSecret = async (): Promise<Record<string, any>> => {
 
-    console.log({ region: AWS_REGION, secretId: AWS_SECRET_ID });
-
     // Create a Secrets Manager client
     if (!_secret || !_secretsManager) {
         _secretsManager = new SecretsManager({ region: AWS_REGION });

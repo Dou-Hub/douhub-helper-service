@@ -5,18 +5,17 @@
 
 import { cloneDeep, isArray, isObject } from 'lodash';
 import { isNonEmptyString, removeNoValueProperty } from 'douhub-helper-util';
-import { AWS_REGION } from './types';
 import { DynamoDB } from 'aws-sdk';
 
 const _dynamoDb: Record<string, any> = {};
 
-export const getDynamoDB = (region?: AWS_REGION) => {
+export const getDynamoDB = (region?: string) => {
     region = region ? region : 'us-east-1';
     if (!_dynamoDb[region]) _dynamoDb[region] = new DynamoDB.DocumentClient({ region });
     return _dynamoDb[region];
 }
 
-export const dynamoDBDelete = async (id: string, tableName: string, keyName: string, region?: AWS_REGION) => {
+export const dynamoDBDelete = async (id: string, tableName: string, keyName: string, region?: string) => {
 
     if (!isNonEmptyString(id)) throw new Error('ERROR_API_MISSING_PARAMETERS');
     if (!isNonEmptyString(keyName)) keyName = 'id';
@@ -27,7 +26,7 @@ export const dynamoDBDelete = async (id: string, tableName: string, keyName: str
     await (getDynamoDB(region)).delete(params).promise();
 };
 
-export const dynamoDBRetrieve = async (key: string, tableName: string, region?: AWS_REGION, attributes?: Array<string>, keyName?: string): Promise<Record<string,any>> => {
+export const dynamoDBRetrieve = async (key: string, tableName: string, region?: string, attributes?: Array<string>, keyName?: string): Promise<Record<string,any>> => {
 
     if (!isNonEmptyString(key)) throw new Error('ERROR_API_MISSING_PARAMETERS');
     
@@ -41,7 +40,7 @@ export const dynamoDBRetrieve = async (key: string, tableName: string, region?: 
     return record || null;
 };
 
-export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: AWS_REGION) => {
+export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: string) => {
 
     if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
 
@@ -56,7 +55,7 @@ export const dynamoDBCreate = async (data: Record<string, any>, tableName: strin
 
 //If the record does not exist, this will be a create/insert operation
 //If the record exists, it will be a partial update
-export const dynamoDBUpdate = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: AWS_REGION, keyName?: string):Promise<Record<string,any>> => {
+export const dynamoDBUpdate = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: string, keyName?: string):Promise<Record<string,any>> => {
 
     if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
     const newKeyName: string = keyName?keyName: 'id';

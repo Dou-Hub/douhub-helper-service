@@ -19,8 +19,12 @@ export {
 } from './libs/s3';
 
 export {
-    AWS_REGION
-} from './libs/types';
+    DYNAMO_DB_TABLE_NAME_PROFILE,
+    DYNAMO_DB_TABLE_NAME_CACHE,
+    S3_BUCKET_NAME_DATA,
+    AWS_REGION,
+    AWS_SECRET_ID
+} from './libs/constants';
 
 export {
     dynamoDBCreate,
