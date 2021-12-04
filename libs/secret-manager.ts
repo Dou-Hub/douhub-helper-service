@@ -4,14 +4,21 @@
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { SecretsManager } from 'aws-sdk';
-import { SECRET_ID} from './constants';
+import { AWS_SECRET_ID, AWS_REGION } from './constants';
+import { isObject } from 'douhub-helper-util';
 
 let _secret: any = null; //global variable to keep as cache
-const _secretsManager: SecretsManager = new SecretsManager({ region: process.env.REGION });
+let _secretsManager: any = null;
 
-export const getSecret = async (): Promise<Record<string,any>> => {
+export const getSecret = async (): Promise<Record<string, any>> => {
+
+    console.log({ region: AWS_REGION, secretId: AWS_SECRET_ID });
+
     // Create a Secrets Manager client
-    if (!_secret) _secret = await _secretsManager.getSecretValue({ SecretId: SECRET_ID }).promise();
+    if (!_secret || !_secretsManager) {
+        _secretsManager = new SecretsManager({ region: AWS_REGION });
+        _secret = await _secretsManager.getSecretValue({ SecretId: AWS_SECRET_ID }).promise();
+    }
 
     if ('SecretString' in _secret) {
         return JSON.parse(_secret.SecretString);
@@ -22,9 +29,9 @@ export const getSecret = async (): Promise<Record<string,any>> => {
 };
 
 
-export const getSecretValue = async (name:string): Promise<string> => {
+export const getSecretValue = async (name: string): Promise<string> => {
     const secret = await getSecret();
-    return secret?.name;
+    return isObject(secret) ? secret[name] : null;
 };
 
 

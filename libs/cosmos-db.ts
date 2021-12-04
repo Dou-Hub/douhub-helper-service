@@ -3,20 +3,19 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import {  isArray } from 'lodash';
-import { isNonEmptyString} from 'douhub-helper-util';
-import { getSecretValue } from './secret-manager';
+import { isArray, isEmpty } from 'lodash';
+import { isNonEmptyString } from 'douhub-helper-util';
+import { getSecretValue} from './secret-manager';
 import { isObject } from 'douhub-helper-util';
 import { CosmosClient } from '@azure/cosmos';
 
-let _cosmosDB: Record<string,any> = {};
+const _cosmosDB: Record<string, any> = {};
 
 const getCosmosDb = async () => {
 
-    if (_cosmosDB) return _cosmosDB;
+    if (!isEmpty(_cosmosDB)) return _cosmosDB;
 
     const coreDBConnectionInfo = (await getSecretValue('COSMOS_DB')).split("|");
-    _cosmosDB = {};
 
     _cosmosDB.settings = {
         type: "cosmosDb",
@@ -40,55 +39,46 @@ const getCosmosDb = async () => {
 };
 
 export const cosmosDbClient = async () => {
-    if (_cosmosDB) return _cosmosDB.client;
     return (await getCosmosDb()).client;
 };
 
 export const cosmosDbSettings = async () => {
-    if (_cosmosDB) return _cosmosDB.settings;
     return (await getCosmosDb()).settings;
 };
 
+export const cosmosDBDatabase = async () => {
+    return (await cosmosDbClient()).database((await cosmosDbSettings()).databaseId);
+}
 
-export const cosmosDBDelete = async (data: Record<string,any>) => {
+export const cosmosDBContainer = async () => {
+    return (await cosmosDBDatabase()).container((await cosmosDbSettings()).collectionId);
+}
 
-    const coreDBSettings = await cosmosDbSettings();
-    const container = ((await cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.item(data.id, isNonEmptyString(data.partitionKey) ? data.partitionKey : data.organizationId).delete();
-
+export const cosmosDBDelete = async (data: Record<string, any>) => {
+    await (await cosmosDBContainer()).item(data.id, isNonEmptyString(data.partitionKey) ? data.partitionKey : data.organizationId).delete();
 };
 
-export const cosmosDBQuery = async (query:string , parameters: Record<string,any>, settings?: Record<string,any>) => {
-
+export const cosmosDBQuery = async (query: string, parameters: Record<string, any>, settings?: Record<string, any>) => {
     const includeAzureInfo = settings?.includeAzureInfo;
-
-    const coreDBSettings = await cosmosDbSettings();
-    const container = ((await cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-
-    const response = await container.items.query({ query, parameters }, { enableCrossPartitionQuery: true }).fetchAll();
+    const response = await (await cosmosDBContainer()).items.query({ query, parameters }, { enableCrossPartitionQuery: true }).fetchAll();
     return !includeAzureInfo ? response.resources : response;
 };
 
-export const cosmosDBUpsert = async (data:Record<string,any>) => {
-    const coreDBSettings = await cosmosDbSettings();
-    const container = ((await cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.items.upsert(data);
+export const cosmosDBUpsert = async (data: Record<string, any>) => {
+    await (await cosmosDBContainer()).items.upsert(data);
 };
 
 
-export const cosmosDBUpdateIfMatch = async (data:Record<string,any>) => {
-    const coreDBSettings = await cosmosDbSettings();
-    const container = ((await cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.item(data.id).replace(data, { accessCondition: { type: "IfMatch", condition: data["_etag"] } });
+export const cosmosDBUpdateIfMatch = async (data: Record<string, any>) => {
+    await (await cosmosDBContainer()).item(data.id).replace(data, { accessCondition: { type: "IfMatch", condition: data["_etag"] } });
 };
 
-export const cosmosDBUpdate = async (data:Record<string,any>) => {
-    const coreDBSettings = await cosmosDbSettings();
-    const container = ((await cosmosDbClient()).database(coreDBSettings.databaseId)).container(coreDBSettings.collectionId);
-    await container.item(data.id).replace(data);
+export const cosmosDBUpdate = async (data: Record<string, any>) => {
+    console.log('cosmosDBUpdate');
+    await (await cosmosDBContainer()).item(data.id).replace(data);
 };
 
-export const cosmosDBRetrieve = async (id:string, settings?:Record<string,any>): Promise<Record<string,any> | null> => {
+export const cosmosDBRetrieve = async (id: string, settings?: Record<string, any>): Promise<Record<string, any> | null> => {
 
     if (!isNonEmptyString(id)) return null;
     if (!isObject(settings)) settings = {};
