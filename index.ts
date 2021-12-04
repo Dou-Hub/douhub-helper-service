@@ -25,7 +25,8 @@ export {
 export {
     dynamoDBCreate,
     dynamoDBRetrieve,
-    dynamoDBDelete
+    dynamoDBDelete,
+    dynamoDBUpdate
 } from './libs/dynamo-db';
 
 export {
