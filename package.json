@@ -1,7 +1,7 @@
 {
   "name": "douhub-helper-service",
   "licence": "MIT",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -16,7 +16,7 @@
   "dependencies": {
     "@azure/cosmos": "^3.14.1",
     "aws-sdk": "^2.1033.0",
-    "douhub-helper-util": "1.0.24",
+    "douhub-helper-util": "^1.0.25",
     "lodash": "^4.17.21",
     "slugify": "^1.6.3"
   },
