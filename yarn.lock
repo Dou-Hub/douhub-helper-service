@@ -1351,10 +1351,10 @@ domexception@^2.0.1:
   dependencies:
     webidl-conversions "^5.0.0"
 
-douhub-helper-util@^1.0.25:
-  version "1.0.25"
-  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.25.tgz#e4eef6ebc919c5e2020fd313c150f37f28725f58"
-  integrity sha512-fXp6FfjvbQj1LNyt+7L+DNOFz+1mcWRPZEggExqsyScqAnVQDpk+qLAEbcWWnvdVO0NHBqxaRC16xt4jEIFKvg==
+douhub-helper-util@^1.0.28:
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.28.tgz#0c5dfcb84aa3d833c478dc8f3eb9ff511e795aab"
+  integrity sha512-0vDfcR7Mau9d6cuSKLp12NYdXtVac4MkStismy8lkqGwgw1366s9pTl90CYXcy2v5Fqce1r4R9SQeJNL2tYroA==
   dependencies:
     is-url "^1.2.4"
     js-base64 "^3.7.2"

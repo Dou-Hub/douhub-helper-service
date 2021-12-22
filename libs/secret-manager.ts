@@ -31,5 +31,3 @@ export const getSecretValue = async (name: string): Promise<string> => {
     const secret = await getSecret();
     return isObject(secret) ? secret[name] : null;
 };
-
-

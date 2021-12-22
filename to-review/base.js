@@ -62,62 +62,6 @@ _.callFromAWSEvents = (event) => {
     return event.source == "aws.events";
 };
 
-_.getObjectValueOfEvent = (event, name, defaultValue) => {
-    if (!_.isObject(defaultValue)) defaultValue = null;
-    const val = _.getPropValueOfEvent(event, name);
-    try {
-        return _.isObject(val) ? val : (_.isNonEmptyString(val) ? JSON.parse(val) : defaultValue);
-    }
-    catch (error) {
-        console.error({ error, name, defaultValue, val });
-    }
-    return null;
-};
-
-_.getGuidValueOfEvent = (event, name, defaultValue) => {
-    if (!_.isGuid(defaultValue)) defaultValue = null;
-    const val = _.getPropValueOfEvent(event, name);
-    return _.isGuid(val) ? val : defaultValue;
-};
-
-_.getIntValueOfEvent = (event, name, defaultValue) => {
-    if (!_.isNumber(defaultValue)) defaultValue = null;
-    const val = _.getPropValueOfEvent(event, name);
-    return !isNaN(parseInt(val)) ? parseInt(val) : defaultValue;
-};
-
-_.getFloatValueOfEvent = (event, name, defaultValue) => {
-    if (!_.isNumber(defaultValue)) defaultValue = null;
-    const val = _.getPropValueOfEvent(event, name);
-    return !isNaN(parseFloat(val)) ? parseFloat(val) : defaultValue;
-};
-
-
-_.getBooleanValueOfEvent = (event, name, defaultValue) => {
-    if (!_.isBoolean(defaultValue)) defaultValue = null;
-    const val = _.getPropValueOfEvent(event, name);
-    if (`${val}`.toLowerCase() == 'true') return true;
-    if (`${val}`.toLowerCase() == 'false') return false;
-    return _.isNil(defaultValue) ? null : `${defaultValue}`.toLowerCase() == 'true';
-};
-
-
-_.getArrayPropValueOfEvent = (event, name, defaultValue) => {
-    if (!_.isArray(defaultValue)) defaultValue = null;
-    const val = _.getPropValueOfEvent(event, name);
-    return _.isArray(val) ? val : _.isNonEmptyString(val) ? JSON.parse(val) : defaultValue;
-};
-
-_.getPropValueOfEvent = (event, name, defaultValue) => {
-
-    let v = _.getPropValueOfObject(event.headers, name);
-    if (!v) v = _.getPropValueOfObject(event.path, name);
-    if (!v) v = _.getPropValueOfObject(event.body, name);
-    if (!v) v = _.getPropValueOfObject(event.query, name);
-
-    return !_.isNil(v) ? v : (_.isNil(defaultValue) ? null : defaultValue);
-};
-
 
 _.getRecordToken = (event) => {
     let token = _.getPropValueOfEvent(event, "recordToken");
@@ -138,71 +82,8 @@ _.getAccessToken = (event) => {
     return _.getPropValueOfEvent(event, 'accessToken');
 };
 
-_.getSecretValue = async (name) => {
-    const secret = await _.retrieveSecret();
-    const value = secret ? secret[name] : null;
-    return value;
-};
-
-_.retrieveSecret = async () => {
-
-    // Create a Secrets Manager client
-    if (!_.secret) _.secret = await _.secretsManager.getSecretValue({ SecretId: process.env.RESOURCE_PREFIX }).promise();
-
-    if ('SecretString' in _.secret) {
-        return JSON.parse(_.secret.SecretString);
-    } else {
-        let buff = new Buffer(_.secret.SecretBinary, 'base64');
-        return buff.toString('ascii');
-    }
-};
 
 
-_.throw = (name, detail) => {
-
-    console.error({ type: 'managed', name, detail });
-    throw { type: 'managed', name, detail };
-};
-
-//Render error result
-_.onError = (error, settings) => {
-
-    console.error({ error, settings: JSON.stringify(settings) });
-
-    if (!_.isObject(settings)) settings = {};
-    const { name, detail, callback } = settings;
-
-    const newError = _.assign({ name, detail }, _.isObject(error) ? error : { error });
-
-    newError.statusCode = newError.statusCode || 500;
-    newError.statusName = newError.statusName || newError.name;
-
-    //TODO: Logo the error to a storage, send action to handle it by other services
-
-    if (callback) callback({ error: newError });
-    return { error: newError };
-};
-
-//Render success result
-_.onSuccess = (event, data, statusCode) => {
-    //cx.event.identity.userAgent==='Local', this is defined in the serverless local invoke profile
-    //when userAgent==='Local', it means the developer is running the function locally
-    //Because the serverless local invoke can't render application/json and a true JSON in the body properly
-    //In this case,we will have to convert a true JSON to be strinified and use text/plain
-
-    const isLocal = event && event.identity && event.identity.userAgent === "Local";
-    const contentType = !_.isObject(data) || isLocal ? "text/plain" : "application/json";
-    let body = data;
-    if (isLocal && _.isObject(data)) body = JSON.stringify(data);
-
-    const result = {
-        statusCode: _.isNumber(statusCode) ? statusCode : 200,
-        headers: { "Content-Type": contentType },
-        body,
-    };
-
-    return result;
-};
 
 _.getUploadSetting = async (type, fileName) => {
 

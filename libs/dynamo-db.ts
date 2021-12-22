@@ -3,16 +3,15 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { cloneDeep, isArray, isObject } from 'lodash';
-import { isNonEmptyString, removeNoValueProperty } from 'douhub-helper-util';
+import { isArray, isObject, isNil } from 'lodash';
+import { isNonEmptyString, removeNoValueProperty, _process } from 'douhub-helper-util';
 import { DynamoDB } from 'aws-sdk';
-
-const _dynamoDb: Record<string, any> = {};
 
 export const getDynamoDB = (region?: string) => {
     region = region ? region : 'us-east-1';
-    if (!_dynamoDb[region]) _dynamoDb[region] = new DynamoDB.DocumentClient({ region });
-    return _dynamoDb[region];
+    if (isNil(_process._dynamoDb))  _process._dynamoDb={};
+    if (!_process._dynamoDb[region]) _process._dynamoDb[region] = new DynamoDB.DocumentClient({ region });
+    return _process._dynamoDb[region];
 }
 
 export const dynamoDBDelete = async (id: string, tableName: string, keyName: string, region?: string) => {

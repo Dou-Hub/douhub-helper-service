@@ -3,21 +3,20 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { isArray, isEmpty } from 'lodash';
+import { isArray } from 'lodash';
 import { isNonEmptyString } from 'douhub-helper-util';
 import { getSecretValue} from './secret-manager';
-import { isObject } from 'douhub-helper-util';
+import { isObject, _process } from 'douhub-helper-util';
 import { CosmosClient } from '@azure/cosmos';
-
-const _cosmosDB: Record<string, any> = {};
 
 const getCosmosDb = async () => {
 
-    if (!isEmpty(_cosmosDB)) return _cosmosDB;
-
-    const coreDBConnectionInfo = (await getSecretValue('COSMOS_DB')).split("|");
-
-    _cosmosDB.settings = {
+    if (isObject(_process._cosmosDB)) return _process._cosmosDB;
+    const secrets = await getSecretValue('COSMOS_DB');
+    console.log({secrets})
+    const coreDBConnectionInfo = secrets.split("|");
+    _process._cosmosDB = {};
+    _process._cosmosDB.settings = {
         type: "cosmosDb",
         uri: coreDBConnectionInfo[0],
         key: coreDBConnectionInfo[1],
@@ -26,16 +25,16 @@ const getCosmosDb = async () => {
     };
 
     try {
-        _cosmosDB.client = new CosmosClient({
-            endpoint: _cosmosDB.settings.uri,
-            key: _cosmosDB.settings.key
+        _process._cosmosDB.client = new CosmosClient({
+            endpoint: _process._cosmosDB.settings.uri,
+            key: _process._cosmosDB.settings.key
         });
     }
     catch (error) {
-        console.error({ error, message: 'Failed to new CosmosClient', settings: _cosmosDB.settings });
+        console.error({ error, message: 'Failed to new CosmosClient', settings: _process._cosmosDB.settings });
     }
 
-    return _cosmosDB;
+    return _process._cosmosDB;
 };
 
 export const cosmosDbClient = async () => {

@@ -6,13 +6,13 @@
 
 import { S3 } from 'aws-sdk';
 import { isNil } from 'lodash';
-import { isNonEmptyString, getContentType } from 'douhub-helper-util';
-const _s3: Record<string, any> = {};
+import { isNonEmptyString, getContentType, _process } from 'douhub-helper-util';
 
 export const getS3 = (region?: string) => {
     region = region?region:'us-east-1';
-    if (!_s3[region]) _s3[region] = new S3({ region });
-    return _s3[region];
+    if (isNil(_process._s3)) _process._s3 ={};
+    if (!_process._s3[region]) _process._s3[region] = new S3({ region });
+    return _process._s3[region];
 }
 
 export const s3Exist = async (bucketName: string, fileName: string, region?: string) => {
