@@ -58,7 +58,7 @@ export const dynamoDBCreate = async (data: Record<string, any>, tableName: strin
 
 //If the record does not exist, this will be a create/insert operation
 //If the record exists, it will be a partial update
-export const dynamoDBUpdate = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: string, keyName?: string):Promise<Record<string,any>> => {
+export const dynamoDBUpsert = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: string, keyName?: string):Promise<Record<string,any>> => {
 
     if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
     const newKeyName: string = keyName?keyName: 'id';

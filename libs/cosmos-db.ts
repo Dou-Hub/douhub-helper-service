@@ -13,7 +13,7 @@ const getCosmosDb = async () => {
 
     if (isObject(_process._cosmosDB)) return _process._cosmosDB;
     const secrets = await getSecretValue('COSMOS_DB');
-    console.log({secrets})
+   
     const coreDBConnectionInfo = secrets.split("|");
     _process._cosmosDB = {};
     _process._cosmosDB.settings = {
@@ -73,7 +73,7 @@ export const cosmosDBUpdateIfMatch = async (data: Record<string, any>) => {
 };
 
 export const cosmosDBUpdate = async (data: Record<string, any>) => {
-    console.log('cosmosDBUpdate');
+    
     await (await cosmosDBContainer()).item(data.id).replace(data);
 };
 

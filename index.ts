@@ -30,7 +30,7 @@ export {
     dynamoDBCreate,
     dynamoDBRetrieve,
     dynamoDBDelete,
-    dynamoDBUpdate
+    dynamoDBUpsert
 } from './libs/dynamo-db';
 
 
