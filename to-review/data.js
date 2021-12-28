@@ -439,18 +439,6 @@ import {getDisplay} from '../../shared/util/data';
 //     return record;
 // }
 
-export const applySlug = (record) => {
-    const id = record.id;
-    const display = getDisplay(record);
-    if (!_.isArray(record.slugs)) record.slugs = [];
-    const curSlug = _.slug(`${display} ${id.split('-')[1]}`);
-    if (!_.find(record.slugs, (slug) => slug == curSlug)) {
-        record.slugs.push(curSlug);
-    }
-    
-    record.slug = curSlug;
-    return record;
-};
 
 // export const newRecord = (context, entity, initData) => {
 //     const user = context.user;

@@ -33,10 +33,6 @@ export {
     dynamoDBUpdate
 } from './libs/dynamo-db';
 
-export {
-    slug
-} from './libs/util';
-
 
 export {
     cosmosDbClient,

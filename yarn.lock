@@ -1351,15 +1351,16 @@ domexception@^2.0.1:
   dependencies:
     webidl-conversions "^5.0.0"
 
-douhub-helper-util@^1.0.28:
-  version "1.0.28"
-  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.28.tgz#0c5dfcb84aa3d833c478dc8f3eb9ff511e795aab"
-  integrity sha512-0vDfcR7Mau9d6cuSKLp12NYdXtVac4MkStismy8lkqGwgw1366s9pTl90CYXcy2v5Fqce1r4R9SQeJNL2tYroA==
+douhub-helper-util@^1.0.35:
+  version "1.0.35"
+  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.35.tgz#1c461e85397d586098b4034ec15e94a50c0c3d3b"
+  integrity sha512-90u1FtzUM1D3UU2X81sDsozcsRxqQhuBRYrbugFzX7rdmiWqwCpqIYbE+66hDpQY43iBEa8iwSM8yfHkoiEv5Q==
   dependencies:
     is-url "^1.2.4"
     js-base64 "^3.7.2"
     libphonenumber-js "^1.9.42"
     lodash "^4.17.21"
+    slugify "^1.6.4"
     uuid "^8.3.2"
 
 electron-to-chromium@^1.3.896:
@@ -3346,10 +3347,10 @@ slash@^3.0.0:
   resolved "https://registry.npmjs.org/slash/-/slash-3.0.0.tgz"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-slugify@^1.6.3:
-  version "1.6.3"
-  resolved "https://registry.npmjs.org/slugify/-/slugify-1.6.3.tgz"
-  integrity sha512-1MPyqnIhgiq+/0iDJyqSJHENdnH5MMIlgJIBxmkRMzTNKlS/QsN5dXsB+MdDq4E6w0g9jFA4XOTRkVDjDae/2w==
+slugify@^1.6.4:
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/slugify/-/slugify-1.6.4.tgz#33d84cc9e859ca3852e6537af6a5ff5bb9e439aa"
+  integrity sha512-Pcz296CK0uGnTf4iNQId79Uv6/5G16t0g0x3OsxWS8qVSOW+JXNnNHKVcuDiMgEGTWyK6zjlWXo2dvzV/FLf9Q==
 
 source-map-support@^0.5.6:
   version "0.5.21"

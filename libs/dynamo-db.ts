@@ -39,7 +39,7 @@ export const dynamoDBRetrieve = async (key: string, tableName: string, region?: 
     return record || null;
 };
 
-export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: string) => {
+export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: string) :Promise<Record<string,any>> => {
 
     if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
 
@@ -48,8 +48,12 @@ export const dynamoDBCreate = async (data: Record<string, any>, tableName: strin
     delete data['_charge'];
     delete data['_self'];
 
+    data = processDataForCreate(data);
+
     const params = { TableName: tableName, Item: data };
     await (getDynamoDB(region)).put(params).promise();
+
+    return data;
 };
 
 //If the record does not exist, this will be a create/insert operation
@@ -68,18 +72,7 @@ export const dynamoDBUpdate = async (data: Record<string, any>, tableName: strin
 
     //if oriData is undefined, it means the record does not exist
     //we will create a new record
-    if (!oriData) {
-
-        data = processDataForCreate(data);
-
-        //create a new record
-        await (getDynamoDB(region)).put({
-            TableName: tableName,
-            Item: data
-        }).promise();
-
-        return data;
-    }
+    if (!oriData) return await dynamoDBCreate(data,tableName, region);
 
     //remove some system properties
     delete oriData['aws:rep:updateregion'];
