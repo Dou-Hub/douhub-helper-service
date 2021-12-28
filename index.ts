@@ -9,6 +9,7 @@ export {
 } from './libs/secret-manager';
 
 export {
+    getS3,
     s3Exist,
     s3Put,
     s3PutObject,
@@ -27,6 +28,7 @@ export {
 } from './libs/constants';
 
 export {
+    getDynamoDB,
     dynamoDBCreate,
     dynamoDBRetrieve,
     dynamoDBDelete,
@@ -35,6 +37,7 @@ export {
 
 
 export {
+    getCosmosDb,
     cosmosDbClient,
     cosmosDbSettings,
     cosmosDBDelete,
@@ -45,3 +48,9 @@ export {
     cosmosDBRetrieve
 } from './libs/cosmos-db';
 
+export {
+    createCognitoUser,
+    deleteCognitoUser,
+    updateCognitoPassword,
+    getCognito
+} from './libs/cognito'

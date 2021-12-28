@@ -9,7 +9,7 @@ import { getSecretValue} from './secret-manager';
 import { isObject, _process } from 'douhub-helper-util';
 import { CosmosClient } from '@azure/cosmos';
 
-const getCosmosDb = async () => {
+export const getCosmosDb = async () => {
 
     if (isObject(_process._cosmosDB)) return _process._cosmosDB;
     const secrets = await getSecretValue('COSMOS_DB');

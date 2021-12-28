@@ -8,8 +8,11 @@ import { isNonEmptyString, removeNoValueProperty, _process } from 'douhub-helper
 import { DynamoDB } from 'aws-sdk';
 
 export const getDynamoDB = (region?: string) => {
-    region = region ? region : 'us-east-1';
-    if (isNil(_process._dynamoDb))  _process._dynamoDb={};
+
+    if (!region) region = _process.env.REGION;
+    if (!region) region = 'us-east-1';
+  
+    if (isNil(_process._dynamoDb)) _process._dynamoDb = {};
     if (!_process._dynamoDb[region]) _process._dynamoDb[region] = new DynamoDB.DocumentClient({ region });
     return _process._dynamoDb[region];
 }
@@ -25,12 +28,12 @@ export const dynamoDBDelete = async (id: string, tableName: string, keyName: str
     await (getDynamoDB(region)).delete(params).promise();
 };
 
-export const dynamoDBRetrieve = async (key: string, tableName: string, region?: string, attributes?: Array<string>, keyName?: string): Promise<Record<string,any>> => {
+export const dynamoDBRetrieve = async (key: string, tableName: string, region?: string, attributes?: Array<string>, keyName?: string): Promise<Record<string, any>> => {
 
     if (!isNonEmptyString(key)) throw new Error('ERROR_API_MISSING_PARAMETERS');
-    
+
     const params: Record<string, any> = { TableName: tableName, Key: {} };
-    params.Key[keyName?keyName:'id'] = key;
+    params.Key[keyName ? keyName : 'id'] = key;
 
     if (isArray(attributes)) params.AttributesToGet = attributes; //e.g. ["Artist", "Genre"]
 
@@ -39,7 +42,7 @@ export const dynamoDBRetrieve = async (key: string, tableName: string, region?: 
     return record || null;
 };
 
-export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: string) :Promise<Record<string,any>> => {
+export const dynamoDBCreate = async (data: Record<string, any>, tableName: string, region?: string): Promise<Record<string, any>> => {
 
     if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
 
@@ -58,10 +61,10 @@ export const dynamoDBCreate = async (data: Record<string, any>, tableName: strin
 
 //If the record does not exist, this will be a create/insert operation
 //If the record exists, it will be a partial update
-export const dynamoDBUpsert = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: string, keyName?: string):Promise<Record<string,any>> => {
+export const dynamoDBUpsert = async (data: Record<string, any>, tableName: string, fullUpdate: boolean, region?: string, keyName?: string): Promise<Record<string, any>> => {
 
     if (!data) throw new Error('ERROR_API_MISSING_PARAMETERS');
-    const newKeyName: string = keyName?keyName: 'id';
+    const newKeyName: string = keyName ? keyName : 'id';
     if (!isNonEmptyString(data[newKeyName])) throw new Error('ERROR_API_MISSING_PARAMETERS');
 
     delete data['_charge'];
@@ -72,7 +75,7 @@ export const dynamoDBUpsert = async (data: Record<string, any>, tableName: strin
 
     //if oriData is undefined, it means the record does not exist
     //we will create a new record
-    if (!oriData) return await dynamoDBCreate(data,tableName, region);
+    if (!oriData) return await dynamoDBCreate(data, tableName, region);
 
     //remove some system properties
     delete oriData['aws:rep:updateregion'];
@@ -118,13 +121,13 @@ const processDataForCreate = (data: Record<string, any>) => {
 //if the property value in the new data is null or undefined, it will be removed, it means removed property has to be explicitly defined with null or undefiend value
 //if the property has value in old date but the property does not exist in new data, the property in the old data will be used, this will allow support partial update
 //if the value is changes or new property in the new data, it will be updated or added by using SET
-const createUpdateExpression = (oldData: Record<string,any>, newData: Record<string,any>, fullUpdate: boolean) => {
+const createUpdateExpression = (oldData: Record<string, any>, newData: Record<string, any>, fullUpdate: boolean) => {
     let expressionRemove = '';
     let expressionUpdate = '';
-    let expressionAttributeValues: Record<string,any> = {};
-    let expressionAttributeNames: Record<string,any> = {};
+    let expressionAttributeValues: Record<string, any> = {};
+    let expressionAttributeNames: Record<string, any> = {};
 
-    const data: Record<string,any> = {};
+    const data: Record<string, any> = {};
 
     //handle remove
     let p = null;

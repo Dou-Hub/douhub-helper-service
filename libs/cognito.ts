@@ -1,52 +1,52 @@
-
-//  COPYRIGHT:       PrimeObjects Software Inc. (C) 2021 All Right Reserved
-//  COMPANY URL:     https://www.primeobjects.com/
-//  CONTACT:         developer@primeobjects.com
+//  Copyright PrimeObjects Software Inc. and other contributors <https://www.primeobjects.com/>
 // 
-//  This source is subject to the PrimeObjects License Agreements. 
-// 
-//  Our EULAs define the terms of use and license for each PrimeObjects product. 
-//  Whenever you install a PrimeObjects product or research PrimeObjects source code file, you will be prompted to review and accept the terms of our EULA. 
-//  If you decline the terms of the EULA, the installation should be aborted and you should remove any and all copies of our products and source code from your computer. 
-//  If you accept the terms of our EULA, you must abide by all its terms as long as our technologies are being employed within your organization and within your applications.
-// 
-//  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
-//  OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT
-//  LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-//  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  ALL OTHER RIGHTS RESERVED
+//  This source code is licensed under the MIT license.
+//  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
+import { _process } from 'douhub-helper-util';
+import { CognitoIdentityServiceProvider } from 'aws-sdk';
+import { isArray } from 'lodash';
 
-import _ from './base';
+export const getCognito = (region?: string) => {
 
-export const createUser = async (
-    userPoolId,
-    userPoolClientId,
-    organizationId,
-    userId,
-    password,
-    attributes
+    if (!region) region = _process.env.REGION;
+    if (!region) region = 'us-east-1';
+
+    if (!_process._cognito) _process._cognito = {};
+    if (!_process._cognito[region]) _process._cognito[region] = new CognitoIdentityServiceProvider({ region });
+    return _process._cognito[region];
+}
+
+export const createCognitoUser = async (
+    userPoolId: string,
+    userPoolClientId: string,
+    organizationId: string,
+    userId: string,
+    password: string,
+    attributes?: string[],
+    region?: string
 ) => {
-    if (!_.isArray(attributes)) attributes = [];
-    return await createUserInternal(
+    if (!isArray(attributes)) attributes = [];
+    return await createCognitoUserInternal(
         userPoolId,
         userPoolClientId,
         organizationId,
         userId,
         password,
-        attributes
+        attributes,
+        region
     );
 };
 
 
-export const createUserInternal = async (
-    userPoolId,
-    userPoolClientId,
-    organizationId,
-    userId,
-    password,
-    attributes
+export const createCognitoUserInternal = async (
+    userPoolId: string,
+    userPoolClientId: string,
+    organizationId: string,
+    userId: string,
+    password: string,
+    attributes: string[],
+    region?: string
 ) => {
     const userName = `${organizationId}.${userId}`;
 
@@ -58,8 +58,10 @@ export const createUserInternal = async (
         UserAttributes: attributes,
     };
 
+    const cognito = getCognito(region);
+
     return new Promise((resolve, reject) => {
-        _.cognito
+        cognito(region)
             .adminCreateUser(params)
             .promise()
             .then(() => {
@@ -75,9 +77,9 @@ export const createUserInternal = async (
                         PASSWORD: password,
                     },
                 };
-                return _.cognito.adminInitiateAuth(params).promise();
+                return cognito.adminInitiateAuth(params).promise();
             })
-            .then((data) => {
+            .then((data: Record<string, any>) => {
                 // We now have a proper challenge, set the password permanently.
                 let challengeResponseData = {
                     USERNAME: userName,
@@ -92,16 +94,20 @@ export const createUserInternal = async (
                     Session: data.Session,
                 };
                 resolve(
-                    _.cognito.adminRespondToAuthChallenge(params).promise()
+                    cognito.adminRespondToAuthChallenge(params).promise()
                 );
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 reject(error);
             });
     });
 };
 
-export const deleteUser = async (userPoolId, organizationId, userId) => {
+export const deleteCognitoUser = async (
+    userPoolId: string,
+    organizationId: string,
+    userId: string,
+    region?: string) => {
     const userName = `${organizationId}.${userId}`;
 
     const params = {
@@ -109,12 +115,12 @@ export const deleteUser = async (userPoolId, organizationId, userId) => {
         Username: userName,
     };
     return new Promise((resolve, reject) => {
-        _.cognito.adminDeleteUser(params)
+        getCognito(region).adminDeleteUser(params)
             .promise()
-            .then(async () => {
-                resolve();
+            .then((data: any) => {
+                resolve(data);
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 reject(error);
             });
     });
@@ -123,16 +129,22 @@ export const deleteUser = async (userPoolId, organizationId, userId) => {
 //AWS Cognito does not support admin change password
 //We does not need any attribute and features in Cognito,
 //Before AWS API support it, we simply delete and receate a user with new password
-export const updateUserPassword = async (userPoolId, userPoolClientId, organizationId, userId, password, attributes) => {
-    await deleteUser(userPoolId, organizationId, userId);
-    await createUserInternal(
+ export const updateCognitoPassword = async (
+    userPoolId: string,
+    userPoolClientId: string,
+    organizationId: string,
+    userId: string,
+    password: string,
+    attributes: string[],
+    region?: string) => {
+    await deleteCognitoUser(userPoolId, organizationId, userId);
+    await createCognitoUser(
         userPoolId,
         userPoolClientId,
         organizationId,
         userId,
         password,
-        attributes
+        attributes,
+        region
     );
 };
-
-export default {createUser, deleteUser};

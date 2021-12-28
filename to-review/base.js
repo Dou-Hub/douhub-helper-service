@@ -105,94 +105,9 @@ _.getUploadSetting = async (type, fileName) => {
     return result;
 };
 
-//START: S3
-
-_.s3Exist = async (bucketName, fileName) => {
-    return new Promise(function (resolve) {
-        _.s3.headObject({
-            Bucket: bucketName,
-            Key: fileName
-        }, function (err) {
-            if (err) {
-                resolve(false);
-            }
-            else {
-                resolve(true);
-            }
-        });
-    });
-};
-
-_.s3Put = async (bucketName, fileName, content) => {
-    await _.s3.putObject({
-        Bucket: bucketName,
-        Key: fileName,
-        Body: content
-    }).promise();
-};
-
-_.s3PutObject = async (bucketName, fileName, content) => {
-    await _.s3Put(bucketName, fileName, _.isNil(content) ? '' : JSON.stringify(content));
-};
-
-_.s3Get = async (bucketName, fileName, versionId) => {
-
-    const params = versionId ? {
-        Bucket: bucketName,
-        Key: fileName,
-        VersionId: versionId
-    } : {
-        Bucket: bucketName,
-        Key: fileName
-    };
-
-    const result = await _.s3.getObject(params).promise();
-
-    return {
-        versionId: result.VersionId,
-        size: result.ContentLength,
-        modifiedOn: result.LastModified,
-        content: result.Body.toString()
-    };
-
-};
-
-_.s3GetObject = async (bucketName, fileName, versionId) => {
-    const result = await _.s3Get(bucketName, fileName, versionId);
-    return {
-        versionId: result.versionId,
-        size: result.size,
-        modifiedOn: result.modifiedOn,
-        content: _.isNonEmptyString(result.content) ? JSON.parse(result.content) : null
-    };
-};
-
-_.s3Delete = async (bucketName, fileName) => {
-    return new Promise(function (resolve, reject) {
-        _.s3.deleteObject({
-            Bucket: bucketName,
-            Key: fileName
-        },
-            function (err, url) {
-                if (err) {
-                    reject(err);
-                }
-                else {
-                    resolve(url);
-                }
-            });
-    });
-};
-
-//END: S3
 
 //START: TOKEN
-_.encryptToken = async (id) => {
-    return _.encrypt(
-        id,
-        await _.getSecretValue('SECRET_CODE'),
-        await _.getSecretValue('SECRET_IV'));
-};
+
 
 _.upsertToken = async (userId, type, data, allowMultiple) => {
 
@@ -436,21 +351,6 @@ _.setQueryCache = async (query, data, settings) => {
 };
 
 //END: CACHE
-
-_.getDomain = (event, skipQueryValue) => {
-
-    let domain = skipQueryValue ? null : _.getPropValueOfObject(_.isObject(event.query) ? event.query : {}, "domain");
-    if (!_.isNonEmptyString(domain)) domain = _.getPropValueOfObject(event.headers, "origin");
-    if (!_.isNonEmptyString(domain)) domain = _.getPropValueOfObject(event.headers, "referer");
-
-    //try to get domain name from the origin header
-    if (_.isNonEmptyString(domain)) {
-        const location = _.getWebLocation(domain);
-        if (location) domain = location.host;
-    }
-
-    return domain;
-};
 
 
 _.createRecordToken = async (data, expiredOn, settings) => {
