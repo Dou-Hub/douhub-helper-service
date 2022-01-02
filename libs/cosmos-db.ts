@@ -9,7 +9,7 @@ import { getSecretValue} from './secret-manager';
 import { isObject, _process } from 'douhub-helper-util';
 import { CosmosClient } from '@azure/cosmos';
 
-export const getCosmosDb = async () => {
+export const getCosmosDB = async () => {
 
     if (isObject(_process._cosmosDB)) return _process._cosmosDB;
     const secrets = await getSecretValue('COSMOS_DB');
@@ -17,7 +17,7 @@ export const getCosmosDb = async () => {
     const coreDBConnectionInfo = secrets.split("|");
     _process._cosmosDB = {};
     _process._cosmosDB.settings = {
-        type: "cosmosDb",
+        type: "cosmosDB",
         uri: coreDBConnectionInfo[0],
         key: coreDBConnectionInfo[1],
         collectionId: coreDBConnectionInfo[2],
@@ -37,20 +37,20 @@ export const getCosmosDb = async () => {
     return _process._cosmosDB;
 };
 
-export const cosmosDbClient = async () => {
-    return (await getCosmosDb()).client;
+export const cosmosDBClient = async () => {
+    return (await getCosmosDB()).client;
 };
 
-export const cosmosDbSettings = async () => {
-    return (await getCosmosDb()).settings;
+export const cosmosDBSettings = async () => {
+    return (await getCosmosDB()).settings;
 };
 
 export const cosmosDBDatabase = async () => {
-    return (await cosmosDbClient()).database((await cosmosDbSettings()).databaseId);
+    return (await cosmosDBClient()).database((await cosmosDBSettings()).databaseId);
 }
 
 export const cosmosDBContainer = async () => {
-    return (await cosmosDBDatabase()).container((await cosmosDbSettings()).collectionId);
+    return (await cosmosDBDatabase()).container((await cosmosDBSettings()).collectionId);
 }
 
 export const cosmosDBDelete = async (data: Record<string, any>) => {
@@ -96,4 +96,45 @@ export const cosmosDBRetrieve = async (id: string, settings?: Record<string, any
     ], { includeAzureInfo: true });
     const data = result.resources;
     return !includeAzureInfo ? (isArray(data) && data.length == 1 ? data[0] : null) : result;
+};
+
+export const getDualCosmosDBClients = (sourceConnection: string, targetConnection: string): Record<string, any> => {
+    
+    const sourceCoreDBConnectionInfo = sourceConnection.split("|");
+    const targetCoreDBConnectionInfo = targetConnection.split("|");
+
+    const result: Record<string, any> = {};
+
+    result.source = {
+        type: "cosmosDB",
+        uri: sourceCoreDBConnectionInfo[0],
+        key: sourceCoreDBConnectionInfo[1],
+        collectionId: sourceCoreDBConnectionInfo[2],
+        databaseId: sourceCoreDBConnectionInfo[3],
+    };
+
+    result.target = {
+        type: "cosmosDB",
+        uri: targetCoreDBConnectionInfo[0],
+        key: targetCoreDBConnectionInfo[1],
+        collectionId: targetCoreDBConnectionInfo[2],
+        databaseId: targetCoreDBConnectionInfo[3],
+    };
+
+    try {
+        result.sourceClient = new CosmosClient({
+            endpoint: result.source.uri,
+            key: result.source.key
+        });
+
+        result.targetClient = new CosmosClient({
+            endpoint: result.target.uri,
+            key: result.target.key
+        });
+    }
+    catch (error) {
+        console.error({ error, message: 'Failed to new Dual CosmosDB Clients', settings: result.settings });
+    }
+
+    return result;
 };

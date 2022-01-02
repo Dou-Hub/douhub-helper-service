@@ -17,10 +17,10 @@ export const getDynamoDB = (region?: string) => {
     return _process._dynamoDb[region];
 }
 
-export const dynamoDBDelete = async (id: string, tableName: string, keyName: string, region?: string) => {
+export const dynamoDBDelete = async (id: string, tableName: string, keyName?: string, region?: string) => {
 
     if (!isNonEmptyString(id)) throw new Error('ERROR_API_MISSING_PARAMETERS');
-    if (!isNonEmptyString(keyName)) keyName = 'id';
+    if (!keyName) keyName = 'id';
 
     const params: Record<string, any> = { TableName: tableName, Key: {} };
     params.Key[keyName] = id;
@@ -28,7 +28,7 @@ export const dynamoDBDelete = async (id: string, tableName: string, keyName: str
     await (getDynamoDB(region)).delete(params).promise();
 };
 
-export const dynamoDBRetrieve = async (key: string, tableName: string, region?: string, attributes?: Array<string>, keyName?: string): Promise<Record<string, any>> => {
+export const dynamoDBRetrieve = async (key: string, tableName: string, region?: string, attributes?: Array<string>, keyName?: string): Promise<Record<string, any>|null> => {
 
     if (!isNonEmptyString(key)) throw new Error('ERROR_API_MISSING_PARAMETERS');
 

@@ -61,8 +61,7 @@ export const createCognitoUserInternal = async (
     const cognito = getCognito(region);
 
     return new Promise((resolve, reject) => {
-        cognito(region)
-            .adminCreateUser(params)
+        cognito.adminCreateUser(params)
             .promise()
             .then(() => {
                 // We created the user above, but the password is marked as temporary.

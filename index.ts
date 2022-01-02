@@ -9,12 +9,16 @@ export {
 } from './libs/secret-manager';
 
 export {
+    S3Result,
+    S3ResultObject,
     getS3,
     s3Exist,
     s3Put,
     s3PutObject,
     s3Get,
+    s3GetDetail,
     s3GetObject,
+    s3GetObjectDetail,
     s3Delete,
     s3SignedUrl
 } from './libs/s3';
@@ -37,9 +41,10 @@ export {
 
 
 export {
-    getCosmosDb,
-    cosmosDbClient,
-    cosmosDbSettings,
+    getCosmosDB,
+    getDualCosmosDBClients,
+    cosmosDBClient,
+    cosmosDBSettings,
     cosmosDBDelete,
     cosmosDBQuery,
     cosmosDBUpsert,

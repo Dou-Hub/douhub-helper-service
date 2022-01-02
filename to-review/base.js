@@ -50,7 +50,7 @@ _.s3 = new AWS.S3({ region: process.env.REGION });
 _.sns = new AWS.SNS({ region: process.env.REGION });
 _.ses = new AWS.SES({ region: process.env.REGION });
 _.dynamoDb = new AWS.DynamoDB.DocumentClient({ region: process.env.REGION });
-_.cosmosDb = null;
+
 _.graphDb = null;
 _.secret = null;
 _.elasticSearchCache = null;
@@ -104,89 +104,6 @@ _.getUploadSetting = async (type, fileName) => {
 
     return result;
 };
-
-
-//START: TOKEN
-
-
-_.upsertToken = async (userId, type, data, allowMultiple) => {
-
-    const id = `tokens.${userId}`;
-    let token = null;
-    let profile = (await _.dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
-    if (!_.isObject(profile)) {
-        //if there is no the user tokens profile, we will create one
-        token = { token: await _.encryptToken(`${userId}|${type}|${_.newGuid()}`), createdOn: _.utcISOString(), type, data };
-        await _.dynamoDb.put({
-            TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: {
-                createdOn: _.utcISOString(), id, tokens: [token]
-            }
-        }).promise();
-    }
-    else {
-        if (allowMultiple) {
-            token = { token: await _.encryptToken(`${userId}|${type}|${_.newGuid()}`), createdOn: _.utcISOString(), type, data };
-            profile.tokens.push(token);
-            await _.dynamoDb.put({
-                TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: profile
-            }).promise();
-        }
-        else {
-            profile.tokens = _.map(profile.tokens, (t) => {
-                if (t.type == type) {
-                    t.data = data;
-                    token = t;
-                }
-                return t;
-            });
-            if (!token) {
-                token = { token: await _.encryptToken(`${userId}|${type}|${_.newGuid()}`), createdOn: _.utcISOString(), type, data };
-                profile.tokens.push(token);
-                await _.dynamoDb.put({
-                    TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: profile
-                }).promise();
-            }
-        }
-    }
-
-    return token;
-};
-
-_.userToken = async (userId, organizationId, roles) => {
-    const type = 'user';
-    let token = await _.getToken(userId, type);
-    if (!token) {
-        token = await _.upsertToken(userId, type, { userId, organizationId, roles });
-    }
-    return token;
-};
-
-_.getToken = async (userId, type) => {
-
-    const id = `tokens.${userId}`;
-    const profile = (await _.dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
-    if (!_.isObject(profile)) return null;
-    const token = _.find(profile.tokens, (t) => t.type == type);
-    return token || null;
-};
-
-_.checkToken = async (token) => {
-
-    try {
-        const userId = (await _.decrypt(token,
-            await _.getSecretValue('SECRET_CODE'),
-            await _.getSecretValue('SECRET_IV'))).split('|')[0];
-        const id = `tokens.${userId}`;
-        const profile = (await _.dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
-        if (!_.isObject(profile)) return null;
-        const result = _.find(profile.tokens, (t) => t.token == token);
-        return _.isObject(result) && _.isObject(result.data) ? result.data : null;
-    }
-    catch (error) {
-        return null;
-    }
-};
-//END: TOKEN
 
 //START: CACHE
 _.getDynamoDbCache = async (key) => {
@@ -384,54 +301,6 @@ _.checkRecordTokenBase = async (recordToken, id) => {
     return _.sameGuid(result[0], id);
 };
 
-_.parseApiToken = async (event) => {
-
-    let apiToken = _.getApiToken(event);
-
-    if (_.isNonEmptyString(apiToken)) {
-
-        try {
-            const tokenData = await _.checkToken(apiToken);
-            //TODO: Use tokenData to check permissions
-            return _.isObject(tokenData) ? tokenData : null;
-        } catch (error) {
-            console.error("ERROR_CURSOLUTIONUSER_BADAPITOKEN", error);
-        }
-    }
-    return null;
-};
-
-_.parseAccessToken = async (event) => {
-
-    const accessToken = _.getAccessToken(event);
-    if (_.isNonEmptyString(accessToken)) {
-        //user.authorization = event.headers.Authorization;
-        //user.accessToken = accessToken;
-
-        //get user info
-        //if (_.trackLibs) console.log("getUser by accessToken - start");
-        const cognitoUser = await _.cognitoIdentityServiceProvider
-            .getUser({ AccessToken: accessToken })
-            .promise();
-
-        //if (_.trackLibs) console.log("getUser by accessToken - end");
-        if (_.isObject(cognitoUser) && _.isNonEmptyString(cognitoUser.Username)) {
-            const userNameInfo = cognitoUser.Username.split(".");
-            const organizationId = userNameInfo[0];
-            const userId = userNameInfo[1];
-
-            //Try to get user token, because it has roles & licenses
-            const userToken = await _.getToken(userId, 'user');
-            if (_.isNil(userToken)) throw 'Missing user token record';
-            const { roles, licenses } = userToken;
-
-            return { accessToken, userId, organizationId, roles, licenses };
-        }
-
-    }
-
-    return null;
-};
 
 _.s3Uploader = async () => {
 
@@ -525,7 +394,7 @@ _.dualCosmosDBs = (sourceConnection, targetConnection) => {
     const result = {};
 
     result.source = {
-        type: "cosmosDb",
+        type: "cosmosDB",
         uri: sourceCoreDBConnectionInfo[0],
         key: sourceCoreDBConnectionInfo[1],
         collectionId: sourceCoreDBConnectionInfo[2],
@@ -533,7 +402,7 @@ _.dualCosmosDBs = (sourceConnection, targetConnection) => {
     };
 
     result.target = {
-        type: "cosmosDb",
+        type: "cosmosDB",
         uri: targetCoreDBConnectionInfo[0],
         key: targetCoreDBConnectionInfo[1],
         collectionId: targetCoreDBConnectionInfo[2],
