@@ -24,6 +24,7 @@ export {
 } from './libs/s3';
 
 export {
+    RESOURCE_PREFIX,
     DYNAMO_DB_TABLE_NAME_PROFILE,
     DYNAMO_DB_TABLE_NAME_CACHE,
     S3_BUCKET_NAME_DATA,

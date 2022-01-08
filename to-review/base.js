@@ -58,10 +58,6 @@ _.s3Uploader = null;
 
 
 
-_.callFromAWSEvents = (event) => {
-    return event.source == "aws.events";
-};
-
 
 _.getRecordToken = (event) => {
     let token = _.getPropValueOfEvent(event, "recordToken");
@@ -85,25 +81,6 @@ _.getAccessToken = (event) => {
 
 
 
-_.getUploadSetting = async (type, fileName) => {
-
-    //let params = { Bucket: bucketName, Key: event.body.key, ACL: access, ContentType: 'image/jpg' };
-    const bucket = `${process.env.RESOURCE_PREFIX}-${type.toLowerCase()}`;
-    let result = '';
-    try {
-        result = {
-            bucket, key: fileName,
-            url: await (await _.s3Uploader()).getSignedUrlPromise('putObject', { Bucket: bucket, Key: fileName, ACL: 'public-read-write', ContentType: _.getContentType(type, fileName) })
-        };
-
-    }
-    catch (error) {
-        result = null;
-        console.error(error);
-    }
-
-    return result;
-};
 
 //START: CACHE
 _.getDynamoDbCache = async (key) => {

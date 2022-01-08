@@ -5,9 +5,9 @@
 
 
 import { S3 } from 'aws-sdk';
-import { isNil } from 'lodash';
-import { getContentType, _process, isObject, isObjectString, _track } from 'douhub-helper-util';
-import { bool } from 'aws-sdk/clients/signer';
+import { isNil, isNumber } from 'lodash';
+import { getContentType, _process, isObject, isObjectString, _track, isNonEmptyString } from 'douhub-helper-util';
+
 
 export type S3Result = {
     versionId: string,
@@ -153,20 +153,26 @@ export const s3Delete = async (bucketName: string, fileName: string, region?: st
 };
 
 
-export const s3SignedUrl = async (bucketName: string, fileName: string,
-    acl: 'public-read-write',
-    expires: 3600,
+export const s3SignedUrl = async (
+    bucketName: string,
+    fileName: string,
+    acl?: string,
+    expires?: number,
     region?: string
 ) => {
     try {
-        return await getS3(region).getSignedUrlPromise('putObject',
-            {
-                Bucket: bucketName,
-                Key: fileName,
-                Expires: expires,
-                ACL: acl,
-                ContentType: getContentType(fileName)
-            })
+
+        if (!isNonEmptyString(acl)) acl = 'public-read-write';
+        if (!(isNumber(expires) && expires > 0)) expires = 3600;
+        const config = {
+            Bucket: bucketName,
+            Key: fileName,
+            Expires: expires,
+            ACL: acl,
+            ContentType: getContentType(fileName)
+        };
+        if (_track) console.log(config);
+        return await getS3(region).getSignedUrlPromise('putObject',config);
     }
     catch (error: any) {
         if (_track) console.error({ source: 's3SignedUrl', error, bucketName, fileName, region, acl, expires });
