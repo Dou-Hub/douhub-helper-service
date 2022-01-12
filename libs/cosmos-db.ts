@@ -77,7 +77,10 @@ export const cosmosDBUpdate = async (data: Record<string, any>) => {
     await (await cosmosDBContainer()).item(data.id).replace(data);
 };
 
-export const cosmosDBRetrieve = async (id: string, settings?: Record<string, any>): Promise<Record<string, any> | null> => {
+export const cosmosDBRetrieve = async (id: string, settings?: {
+    attributes?:string,
+    includeAzureInfo?:boolean
+}): Promise<Record<string, any> | null> => {
 
     if (!isNonEmptyString(id)) return null;
     if (!isObject(settings)) settings = {};
