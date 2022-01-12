@@ -57,7 +57,9 @@ export const cosmosDBDelete = async (data: Record<string, any>) => {
     await (await cosmosDBContainer()).item(data.id, isNonEmptyString(data.partitionKey) ? data.partitionKey : data.organizationId).delete();
 };
 
-export const cosmosDBQuery = async (query: string, parameters: Record<string, any>, settings?: Record<string, any>) => {
+export const cosmosDBQuery = async (query: string, parameters: Record<string, any>, settings?: {
+    includeAzureInfo?: boolean
+}) => {
     const includeAzureInfo = settings?.includeAzureInfo;
     const response = await (await cosmosDBContainer()).items.query({ query, parameters }, { enableCrossPartitionQuery: true }).fetchAll();
     return !includeAzureInfo ? response.resources : response;
