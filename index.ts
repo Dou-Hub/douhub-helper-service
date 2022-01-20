@@ -24,6 +24,12 @@ export {
 } from './libs/s3';
 
 export {
+    getCloudFront,
+    cloudFrontSignedCookieForFolder,
+    cloudFrontSignedUrl
+} from './libs/cloudfront';
+
+export {
     RESOURCE_PREFIX,
     DYNAMO_DB_TABLE_NAME_PROFILE,
     DYNAMO_DB_TABLE_NAME_CACHE,

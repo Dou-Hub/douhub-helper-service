@@ -1388,9 +1388,9 @@ douhub-helper-service@^1.0.26:
     lodash "^4.17.21"
 
 douhub-helper-util@^1.0.36:
-  version "1.0.37"
-  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.37.tgz#101bc5ecac1860e065f5e9af9834572f80c61138"
-  integrity sha512-/jrOoRpbUj7dgbWfnnnrT1QospPLdr7fPK0U4oTunAWhFBOFZF2mDH+5xoEuyEIQpeMh6S8XuaopQQWmlPH/ww==
+  version "1.0.45"
+  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.45.tgz#411cbdba0d25c3f5dfe1bebb01f7aed7a3fea628"
+  integrity sha512-Q+N7vQYfS97KinLCjr6vqM7VJe29IrxD5z0APtzYNzKXcuxn193PVLQfku4g5BY5SM67fx+9WQPJgpjIVVlCHQ==
   dependencies:
     axios "^0.24.0"
     is-url "^1.2.4"
@@ -1798,9 +1798,9 @@ flatted@^3.1.0:
   integrity sha512-8/sOawo8tJ4QOBX8YlQBMxL8+RLZfxMQOif9o0KUKTNTjMYElWPE0r/m5VNFxTRd0NSw8qSy8dajrwX4RYI1Hw==
 
 follow-redirects@^1.14.4:
-  version "1.14.6"
-  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.14.6.tgz#8cfb281bbc035b3c067d6cd975b0f6ade6e855cd"
-  integrity sha512-fhUl5EwSJbbl8AR+uYL2KQDxLkdSjZGR36xy46AO7cOMTrCMON6Sa28FmAnC2tRTDbd/Uuzz3aJBv7EBN7JH8A==
+  version "1.14.7"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.14.7.tgz#2004c02eb9436eee9a21446a6477debf17e81685"
+  integrity sha512-+hbxoLbFMbRKDwohX8GkTataGqO6Jb7jGwpAlwgy2bIz25XtRm7KEzJM76R1WiNT5SwZkX4Y75SwBolkpmE7iQ==
 
 form-data@^3.0.0:
   version "3.0.1"
