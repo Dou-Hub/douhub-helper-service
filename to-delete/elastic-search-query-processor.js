@@ -17,7 +17,7 @@
 // 
 //  ALL OTHER RIGHTS RESERVED
 
-import _ from './base';
+import _ from '../to-review/base';
 import { HTTPERROR_403 } from '../../shared/util/constants';
 import { checkEntityPrivilege } from '../../shared/util/auth';
 import { solution } from '../../shared/metadata/solution';

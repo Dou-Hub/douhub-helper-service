@@ -13,9 +13,9 @@ export const getCloudFront = async () => {
 
 
     if (isNil(_process.signer)) {
-        const keypairId = await getSecretValue('CLOUDFRONT_KEY');
-        const privateKey = (await getSecretValue('CLOUDFRONT_PK')).replace(/\|/g, '\r\n');;
-        _process.signer = new CloudFront.Signer(keypairId, privateKey);
+        const cfPublicKey = await getSecretValue('CLOUDFRONT_PUBLIC_KEY');
+        const cfPrivateKey = (await getSecretValue('CLOUDFRONT_PRIVATE_KEY')).replace(/\|/g, '\r\n');;
+        _process.signer = new CloudFront.Signer(cfPublicKey, cfPrivateKey);
 
     }
     return _process.signer;

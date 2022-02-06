@@ -7,23 +7,21 @@ import { SecretsManager } from 'aws-sdk';
 import { AWS_SECRET_ID, AWS_REGION } from './constants';
 import { isObject, _track, _process } from 'douhub-helper-util';
 
-let _secret: any = null; //global variable to keep as cache
-let _secretsManager: any = null;
 
 export const getSecret = async (region?: string): Promise<Record<string, any>> => {
     if (!region) region = _process.env.REGION;
     if (!region) region = 'us-east-1';
     try {
         // Create a Secrets Manager client
-        if (!_secret || !_secretsManager) {
-            _secretsManager = new SecretsManager({ region });
-            _secret = await _secretsManager.getSecretValue({ SecretId: AWS_SECRET_ID }).promise();
+        if (!_process._secret || !_process._secretsManager) {
+            _process._secretsManager = new SecretsManager({ region });
+            _process._secret = await _process._secretsManager.getSecretValue({ SecretId: AWS_SECRET_ID }).promise();
         }
 
-        if ('SecretString' in _secret) {
-            return JSON.parse(_secret.SecretString);
+        if ('SecretString' in _process._secret) {
+            return JSON.parse(_process._secret.SecretString);
         } else {
-            let buff = Buffer.from(_secret.SecretBinary, 'base64');
+            let buff = Buffer.from(_process._secret.SecretBinary, 'base64');
             return JSON.parse(buff.toString('ascii'));
         }
     } catch (error: any) {

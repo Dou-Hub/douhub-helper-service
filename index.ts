@@ -9,6 +9,18 @@ export {
 } from './libs/secret-manager';
 
 export {
+    getElasticSearch,
+    elasticSearchDelete,
+    elasticSearchQuery,
+    elasticSearchUpsert
+} from './libs/elastic-search';
+
+export {
+    translateByAI,
+    spellCheckByAI
+} from './libs/ai';
+
+export {
     S3Result,
     S3ResultObject,
     getS3,
