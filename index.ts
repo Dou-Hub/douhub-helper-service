@@ -16,6 +16,11 @@ export {
 } from './libs/elastic-search';
 
 export {
+    getSNS,
+    snsPublish
+} from './libs/sns';
+
+export {
     translateByAI,
     spellCheckByAI
 } from './libs/ai';
