@@ -3,10 +3,9 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { isArray } from 'lodash';
-import { isNonEmptyString } from 'douhub-helper-util';
+import { isArray, each } from 'lodash';
+import { isNonEmptyString, isObject, _process } from 'douhub-helper-util';
 import { getSecretValue} from './secret-manager';
-import { isObject, _process } from 'douhub-helper-util';
 import { CosmosClient } from '@azure/cosmos';
 
 export const getCosmosDB = async () => {
@@ -82,7 +81,7 @@ export const cosmosDBUpdate = async (data: Record<string, any>) => {
 export const cosmosDBRetrieve = async (id: string, settings?: {
     attributes?:string,
     includeAzureInfo?:boolean
-}): Promise<Record<string, any> | null> => {
+}): Promise<Record<string, any> | Array<Record<string, any>> | null> => {
 
     if (!isNonEmptyString(id)) return null;
     if (!isObject(settings)) settings = {};
@@ -93,14 +92,45 @@ export const cosmosDBRetrieve = async (id: string, settings?: {
     attributes = !isNonEmptyString(attributes) ? '*' :
         `,${attributes}`.split(',').join(',c.').replace(/ /g, '').substring(1);
 
-    const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id=@id`, [
-        {
-            name: '@id',
-            value: id
-        }
-    ], { includeAzureInfo: true });
-    const data = result.resources;
-    return !includeAzureInfo ? (isArray(data) && data.length == 1 ? data[0] : null) : result;
+    const idList = id.split(',');
+    if (idList.length==1)
+    {
+        const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id=@id`, [
+            {
+                name: '@id',
+                value: id
+            }
+        ], { includeAzureInfo: true });
+
+        const data = result.resources;
+        return !includeAzureInfo ? (isArray(data) && data.length == 1 ? data[0] : null) : result;
+    }
+    else
+    {
+        const idParams: Record<string,any>[] = [];
+        let idQuery = '';
+
+        each(idList, (i, index)=>{
+            if (index==0)
+            {
+                idQuery =`@id${index}`;
+            }
+            else
+            {
+                idQuery =`${idQuery}, @id${index}`;
+            }
+            idParams.push({
+                name: `@id${index}`,
+                value: i
+            })
+        });
+
+        const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id IN (${idQuery})`, idParams, { includeAzureInfo: true });
+        const data = result.resources;
+        return !includeAzureInfo ? data : result;
+    }
+   
+   
 };
 
 export const getDualCosmosDBClients = (sourceConnection: string, targetConnection: string): Record<string, any> => {
