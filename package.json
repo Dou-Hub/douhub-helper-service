@@ -1,7 +1,7 @@
 {
   "name": "douhub-helper-service",
   "licence": "MIT",
-  "version": "1.0.40",
+  "version": "1.0.41",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -17,8 +17,7 @@
     "@azure/cosmos": "^3.14.1",
     "@elastic/elasticsearch": "^7.17.0",
     "aws-sdk": "^2.1033.0",
-    "douhub-helper-lambda": "^1.0.33",
-    "douhub-helper-util": "^1.0.36",
+    "douhub-helper-util": "1.0.55",
     "lodash": "^4.17.21",
     "qs": "^6.10.3"
   },
