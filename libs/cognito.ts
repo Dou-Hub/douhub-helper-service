@@ -125,10 +125,31 @@ export const deleteCognitoUser = async (
     });
 };
 
+export const updateCognitoPassword = async (
+    userPoolId: string,
+    userPoolClientId: string,
+    organizationId: string,
+    userId: string,
+    password: string,
+    attributes?: string[],
+    region?: string
+) => {
+    if (!isArray(attributes)) attributes = [];
+    return await updateCognitoPasswordInternal(
+        userPoolId,
+        userPoolClientId,
+        organizationId,
+        userId,
+        password,
+        attributes,
+        region
+    );
+};
+
 //AWS Cognito does not support admin change password
 //We does not need any attribute and features in Cognito,
 //Before AWS API support it, we simply delete and receate a user with new password
- export const updateCognitoPassword = async (
+ export const updateCognitoPasswordInternal = async (
     userPoolId: string,
     userPoolClientId: string,
     organizationId: string,

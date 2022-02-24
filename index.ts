@@ -21,6 +21,11 @@ export {
 } from './libs/sns';
 
 export {
+    getSES,
+    sesSend
+} from './libs/ses';
+
+export {
     translateByAI,
     spellCheckByAI
 } from './libs/ai';
@@ -74,7 +79,8 @@ export {
     cosmosDBUpsert,
     cosmosDBUpdateIfMatch,
     cosmosDBUpdate,
-    cosmosDBRetrieve
+    cosmosDBRetrieve,
+    cosmosDBContainer
 } from './libs/cosmos-db';
 
 export {
