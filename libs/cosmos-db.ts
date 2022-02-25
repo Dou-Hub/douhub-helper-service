@@ -71,7 +71,7 @@ export const cosmosDBQuery = async (query: string, parameters: Record<string, an
     }
 };
 
-export const cosmosDBUpsert = async (data: Record<string, any>): Promise<Record<string,any>> => {
+export const cosmosDBUpsert = async (data: Record<string, any>): Promise<Record<string, any>> => {
     return (await (await cosmosDBContainer()).items.upsert(data)).resource;
 };
 
@@ -80,60 +80,70 @@ export const cosmosDBUpdateIfMatch = async (data: Record<string, any>) => {
     await (await cosmosDBContainer()).item(data.id).replace(data, { accessCondition: { type: "IfMatch", condition: data["_etag"] } });
 };
 
-export const cosmosDBUpdate = async (data: Record<string, any>): Promise<Record<string,any>> => {
+export const cosmosDBUpdate = async (data: Record<string, any>): Promise<Record<string, any>> => {
 
     return (await (await cosmosDBContainer()).item(data.id).replace(data)).resource;
 };
 
-export const cosmosDBRetrieve = async (id: string, settings?: {
+export const cosmosDBRetrieveByIds = async (ids: string[], settings?: {
     attributes?: string,
     includeAzureInfo?: boolean
-}): Promise<Record<string, any> | Array<Record<string, any>> | null> => {
+}): Promise<Array<Record<string, any>>> => {
 
-    if (!isNonEmptyString(id)) return null;
+    if (ids.length == 0) return [];
+
     if (!isObject(settings)) settings = {};
-
     const includeAzureInfo = settings?.includeAzureInfo;
     let attributes = settings?.attributes;
 
     attributes = !isNonEmptyString(attributes) ? '*' :
         `,${attributes}`.split(',').join(',c.').replace(/ /g, '').substring(1);
 
-    const idList = id.split(',');
-    if (idList.length == 1) {
-        const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id=@id`, [
-            {
-                name: '@id',
-                value: id
-            }
-        ], { includeAzureInfo: true });
+    const idParams: Record<string, any>[] = [];
+    let idQuery = '';
 
-        const data = result.resources;
-        return !includeAzureInfo ? (isArray(data) && data.length == 1 ? data[0] : null) : result;
-    }
-    else {
-        const idParams: Record<string, any>[] = [];
-        let idQuery = '';
+    each(ids, (i, index) => {
+        if (index == 0) {
+            idQuery = `@id${index}`;
+        }
+        else {
+            idQuery = `${idQuery}, @id${index}`;
+        }
+        idParams.push({
+            name: `@id${index}`,
+            value: i
+        })
+    });
 
-        each(idList, (i, index) => {
-            if (index == 0) {
-                idQuery = `@id${index}`;
-            }
-            else {
-                idQuery = `${idQuery}, @id${index}`;
-            }
-            idParams.push({
-                name: `@id${index}`,
-                value: i
-            })
-        });
+    const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id IN (${idQuery})`, idParams, { includeAzureInfo: true });
+    const data = result.resources;
+    return !includeAzureInfo ? data : result;
 
-        const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id IN (${idQuery})`, idParams, { includeAzureInfo: true });
-        const data = result.resources;
-        return !includeAzureInfo ? data : result;
-    }
+}
+
+export const cosmosDBRetrieve = async (id: string, settings?: {
+    attributes?: string,
+    includeAzureInfo?: boolean
+}): Promise<Record<string, any> |  null> => {
+
+    if (!isNonEmptyString(id)) return null;
+    if (!isObject(settings)) settings = {};
+    const includeAzureInfo = settings?.includeAzureInfo;
+    let attributes = settings?.attributes;
+
+    attributes = !isNonEmptyString(attributes) ? '*' :
+        `,${attributes}`.split(',').join(',c.').replace(/ /g, '').substring(1);
 
 
+    const result = await cosmosDBQuery(`SELECT ${attributes} FROM c WHERE c.id=@id`, [
+        {
+            name: '@id',
+            value: id
+        }
+    ], { includeAzureInfo: true });
+
+    const data = result.resources;
+    return !includeAzureInfo ? (isArray(data) && data.length == 1 ? data[0] : null) : result;
 };
 
 export const getDualCosmosDBClients = (sourceConnection: string, targetConnection: string): Record<string, any> => {

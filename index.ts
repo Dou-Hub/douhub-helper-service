@@ -80,6 +80,7 @@ export {
     cosmosDBUpdateIfMatch,
     cosmosDBUpdate,
     cosmosDBRetrieve,
+    cosmosDBRetrieveByIds,
     cosmosDBContainer
 } from './libs/cosmos-db';
 
