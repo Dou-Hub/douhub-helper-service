@@ -13,10 +13,12 @@ export const getSES = (region?: string) => {
 
 //from 
 export const sesSend = async (
-    from: string, to: string[], 
-    subject: string, htmlMessage: 
-    string, textMessage?: string, 
-    cc?: string[], 
+    from: string, 
+    to: string[],
+    subject: string, 
+    htmlMessage: string, 
+    textMessage?: string,
+    cc?: string[],
     region?: string) => {
     try {
 
@@ -25,7 +27,7 @@ export const sesSend = async (
             Destination: {
                 ToAddresses: map(to, (t: string) => {
                     const tinfo = t.split("|");
-                    return tinfo.length > 1 ? `${tinfo[0]} <${tinfo[1]}>` : tinfo[0];
+                    return tinfo.length > 1 ? `${tinfo[1]} <${tinfo[0]}>` : tinfo[0];
                 })
             },
             Message: {
@@ -50,13 +52,13 @@ export const sesSend = async (
 
         //Send from
         const finfo = from.split("|");
-        params.Source = finfo.length > 1 ? `${finfo[0]} <${finfo[1]}>` : finfo[0];
+        params.Source = finfo.length > 1 ? `${finfo[1]} <${finfo[0]}>` : finfo[0];
 
         //CC
         if (isArray(cc) && cc.length > 0) {
             params.Destination.CcAddresses = map(cc, (c: string) => {
                 const cinfo = c.split("|");
-                return cinfo.length > 1 ? `${cinfo[0]} <${cinfo[1]}>` : cinfo[0];
+                return cinfo.length > 1 ? `${cinfo[1]} <${cinfo[0]}>` : cinfo[0];
             });
         }
 

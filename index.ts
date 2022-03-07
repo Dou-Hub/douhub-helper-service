@@ -26,6 +26,16 @@ export {
 } from './libs/ses';
 
 export {
+    getSendGrid,
+    sgSend
+} from './libs/send-grid';
+
+export {
+    sendEmail
+} 
+from './libs/email';
+
+export {
     translateByAI,
     spellCheckByAI
 } from './libs/ai';
