@@ -86,10 +86,12 @@ export {
     cosmosDBSettings,
     cosmosDBDelete,
     cosmosDBQuery,
+    cosmosDBQueryWithAzureInfo,
     cosmosDBUpsert,
     cosmosDBUpdateIfMatch,
     cosmosDBUpdate,
     cosmosDBRetrieve,
+    cosmosDBRetrieveById,
     cosmosDBRetrieveByIds,
     cosmosDBContainer
 } from './libs/cosmos-db';
@@ -100,3 +102,7 @@ export {
     updateCognitoPassword,
     getCognito
 } from './libs/cognito'
+
+export const DEFAULT_USER_ATTRIBUTES = 'id,avatar,firstName,lastName,title,company,introduction,media,url,twitter,icon';
+export const DEFAULT_LOOKUP_ATTRIBUTES = 'id,avatar,firstName,lastName,fullName,name,title,display,text';
+export const DEFAULT_AUTH_ATTRIBUTES = 'id,_id,organizationId,solutionId,ownedBy,security,membership,isGlobal,entityName,entityType';
