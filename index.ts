@@ -105,4 +105,4 @@ export {
 
 export const DEFAULT_USER_ATTRIBUTES = 'id,avatar,firstName,lastName,title,company,introduction,media,url,twitter,icon';
 export const DEFAULT_LOOKUP_ATTRIBUTES = 'id,avatar,firstName,lastName,fullName,name,title,display,text';
-export const DEFAULT_AUTH_ATTRIBUTES = 'id,_id,organizationId,solutionId,ownedBy,security,membership,isGlobal,entityName,entityType';
+export const DEFAULT_AUTH_ATTRIBUTES = 'id,_rid,organizationId,solutionId,ownedBy,security,membership,isGlobal,entityName,entityType';
