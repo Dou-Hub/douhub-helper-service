@@ -66,6 +66,7 @@ export {
     DYNAMO_DB_TABLE_NAME_PROFILE,
     DYNAMO_DB_TABLE_NAME_CACHE,
     S3_BUCKET_NAME_DATA,
+    S3_BUCKET_NAME_CACHE,
     AWS_REGION,
     AWS_SECRET_ID
 } from './libs/constants';
