@@ -17,7 +17,7 @@
     "@azure/cosmos": "^3.14.1",
     "@elastic/elasticsearch": "^7.17.0",
     "@sendgrid/mail": "^7.6.1",
-    "aws-sdk": "^2.1033.0",
+    "aws-sdk": "^2.1140.0",
     "douhub-helper-util": "1.0.82",
     "lodash": "^4.17.21",
     "qs": "^6.10.3"
